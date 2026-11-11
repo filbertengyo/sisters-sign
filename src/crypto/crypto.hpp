@@ -16,7 +16,8 @@ enum class Algorithm { RsaPss, EcdsaP256, Ed25519 };
 
 // Ukuran signature per profil.
 inline constexpr std::size_t kRsaPssSigSize = 384;
-inline constexpr std::size_t kEcdsaP256SigSize = 64; 
+// ECDSA: r||s (bukan DER).
+inline constexpr std::size_t kEcdsaP256SigSize = 64;
 inline constexpr std::size_t kEd25519SigSize = 64;
 
 constexpr std::size_t signature_size(Algorithm a) {
