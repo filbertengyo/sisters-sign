@@ -1,16 +1,30 @@
 name: ci
+
 on:
   pull_request:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test:
     name: build + test (gcc-14, -Werror)
     runs-on: ubuntu-24.04
-    env: { CXX: g++-14 }
+    env:
+      CXX: g++-14
     steps:
       - uses: actions/checkout@v4
+      - name: Cache FetchContent sources
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
       - run: cmake -B build -DSISTER_SIGN_WERROR=ON
       - run: cmake --build build -j
       - run: ctest --test-dir build --output-on-failure
@@ -18,9 +32,15 @@ jobs:
   sanitizers:
     name: ASAN + UBSAN
     runs-on: ubuntu-24.04
-    env: { CXX: g++-14 }
+    env:
+      CXX: g++-14
     steps:
       - uses: actions/checkout@v4
+      - name: Cache FetchContent sources
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-san-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
       - run: cmake -B build -DSISTER_SIGN_SANITIZE=ON
       - run: cmake --build build -j
       - run: ctest --test-dir build --output-on-failure
@@ -30,5 +50,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get install -y clang-format-18
-      - run: find src tests bench include -name '*.cpp' -o -name '*.hpp' | xargs clang-format-18 --dry-run -Werror
+      - name: Install clang-format-18 if missing
+        run: command -v clang-format-18 || sudo apt-get install -y clang-format-18
+      - name: Check formatting
+        run: |
+          find src tests bench include \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
+            | xargs -0 -r clang-format-18 --dry-run -Werror
