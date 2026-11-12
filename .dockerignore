@@ -1,0 +1,20 @@
+# Allowlist: build context hanya berisi yang dibutuhkan untuk build `sister-sign`.
+# Kunci (termasuk kunci test) TIDAK PERNAH masuk build context, apalagi layer image.
+*
+!CMakeLists.txt
+!include/
+!src/
+!tests/
+!bench/
+
+# Dikecualikan lagi walau berada di dalam direktori yang di-allow.
+tests/fixtures/
+tests/results/
+**/*.pem
+**/*.key
+**/*.der
+**/*.p8
+**/*.p12
+**/*.pfx
+**/build/
+**/.git

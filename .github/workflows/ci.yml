@@ -16,9 +16,16 @@ jobs:
   build-test:
     name: build + test (gcc-14, -Werror)
     runs-on: ubuntu-24.04
+    # Debian trixie = OpenSSL 3.5, sama dengan image (CMakeLists butuh >= 3.5; Ubuntu 24.04 masih 3.0).
+    container: debian:trixie
     env:
       CXX: g++-14
     steps:
+      - name: Install toolchain (g++-14, CMake 3.31, OpenSSL 3.5)
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            g++-14 cmake make git ca-certificates libssl-dev
       - uses: actions/checkout@v4
       - name: Cache FetchContent sources
         uses: actions/cache@v4
@@ -32,9 +39,16 @@ jobs:
   sanitizers:
     name: ASAN + UBSAN
     runs-on: ubuntu-24.04
+    # Debian trixie = OpenSSL 3.5, sama dengan image (CMakeLists butuh >= 3.5; Ubuntu 24.04 masih 3.0).
+    container: debian:trixie
     env:
       CXX: g++-14
     steps:
+      - name: Install toolchain (g++-14, CMake 3.31, OpenSSL 3.5)
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            g++-14 cmake make git ca-certificates libssl-dev
       - uses: actions/checkout@v4
       - name: Cache FetchContent sources
         uses: actions/cache@v4
