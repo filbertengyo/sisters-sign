@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.31)
 project(sister-sign VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -19,7 +19,9 @@ if(SISTER_SIGN_SANITIZE)
   target_link_options(project_options INTERFACE -fsanitize=address,undefined)
 endif()
 
-find_package(OpenSSL REQUIRED)
+# OpenSSL >= 3.5: sama dengan image (Debian trixie) dan CI.
+# <3.5 streaming Ed25519 crash dan default salt RSA-PSS berbeda.
+find_package(OpenSSL 3.5 REQUIRED)
 
 include(FetchContent)
 FetchContent_Declare(glaze
@@ -50,6 +52,11 @@ enable_testing()
 add_executable(unit_tests tests/unit/main.cpp tests/unit/smoke_test.cpp tests/unit/result_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
 add_test(NAME unit_tests COMMAND unit_tests)
+
+# Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md
+add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
+target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
+add_test(NAME spike_c COMMAND spike_c)
 
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)

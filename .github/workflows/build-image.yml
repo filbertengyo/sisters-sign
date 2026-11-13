@@ -1,0 +1,158 @@
+name: build-image
+
+# Image container sister-sign (T25).
+#   tag v*            -> build linux/amd64 dari source, push ke ghcr.io/<owner>/<repo>, catat
+#                        digest, lalu cek pull ANONIM by digest (package harus PUBLIK).
+#   pull_request      -> build + cek image saja (tanpa login, tanpa push) bila build berubah.
+#   workflow_dispatch -> sama dengan PR; push hanya bila dijalankan pada ref tag v*.
+# Cek image ada di ci/check-image.sh (bisa dijalankan lokal).
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/build-image.yml
+      - ci/check-image.sh
+      - CMakeLists.txt
+      - 'include/**'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-image-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build + check image (no push)
+    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          provenance: false
+          tags: sister-sign:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Check image
+        run: bash ci/check-image.sh sister-sign:ci
+
+  publish:
+    name: build + push to GHCR (linux/amd64)
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.name.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Image name (GHCR wajib huruf kecil)
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - name: Tags & labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.name.outputs.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=long
+      - name: Login ke GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Check image yang di-push (by digest)
+        env:
+          REF: ${{ steps.name.outputs.image }}@${{ steps.build.outputs.digest }}
+        run: |
+          docker pull "$REF"
+          bash ci/check-image.sh "$REF" "${GITHUB_REF_NAME#v}"
+      - name: Catat versi <-> tag <-> digest
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          version="$(docker run --rm --network none "$IMAGE@$DIGEST" -version)"
+          {
+            echo "version=${version#sister-sign }"
+            echo "git_tag=${GITHUB_REF_NAME}"
+            echo "commit=${GITHUB_SHA}"
+            echo "image=${IMAGE}"
+            echo "digest=${DIGEST}"
+            echo "pull=docker pull ${IMAGE}@${DIGEST}"
+            echo "tags=$(echo "$TAGS" | tr '\n' ' ')"
+          } | tee image-digest.txt
+          {
+            echo "### sister-sign image"
+            echo
+            echo "| versi | git tag | image tag | digest |"
+            echo "|---|---|---|---|"
+            echo "| ${version#sister-sign } | \`${GITHUB_REF_NAME}\` | \`${IMAGE}:${GITHUB_REF_NAME#v}\` | \`${DIGEST}\` |"
+            echo
+            echo '```'
+            echo "docker pull ${IMAGE}@${DIGEST}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-digest
+          path: image-digest.txt
+
+  verify-public:
+    name: anonymous pull by digest
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions: {}
+    env:
+      REF: ${{ needs.publish.outputs.image }}@${{ needs.publish.outputs.digest }}
+      DIGEST: ${{ needs.publish.outputs.digest }}
+    steps:
+      - name: docker pull tanpa login
+        run: |
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          if ! docker pull "$REF"; then
+            echo "::error::Pull anonim gagal. Set visibility package ke Public: Package settings -> Change visibility."
+            exit 1
+          fi
+      - name: Digest sama dengan yang dicatat
+        run: |
+          docker image inspect --format '{{join .RepoDigests "\n"}}' "$REF" | tee repo-digests.txt
+          grep -qF "@${DIGEST}" repo-digests.txt
+      - name: Jalan tanpa jaringan
+        run: docker run --rm --network none "$REF" -version
