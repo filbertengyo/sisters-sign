@@ -1,0 +1,1 @@
+{"schema":"minisign-manifest/v1","package":"demo-pkg","version":"1.2.3","algorithm":"rsa-pss","keyid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","artifact":{"name":"big.iso","size":9007199254740991,"sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}}

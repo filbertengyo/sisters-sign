@@ -61,8 +61,11 @@ add_executable(unit_tests
   tests/unit/crypto_keyio_test.cpp
   tests/unit/hex_test.cpp
   tests/unit/hash_test.cpp
-  tests/unit/base64_test.cpp)
+  tests/unit/base64_test.cpp
+  tests/unit/json_scan_test.cpp
+  tests/unit/manifest_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
+target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
 
 # Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md

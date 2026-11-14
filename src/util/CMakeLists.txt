@@ -1,1 +1,1 @@
-target_sources(core PRIVATE version.cpp result.cpp hex.cpp hash.cpp base64.cpp)
+target_sources(core PRIVATE version.cpp result.cpp hex.cpp hash.cpp base64.cpp json_scan.cpp)

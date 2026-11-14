@@ -1,0 +1,1 @@
+{"schema":"minisign-manifest/v1","package":"demo-pkg","version":"1.2.3","algorithm":"ed25519","keyid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","artifact":{"name":"app.tar.gz","size":12345,"sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}}
