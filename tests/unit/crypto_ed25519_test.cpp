@@ -170,9 +170,12 @@ TEST_CASE("Ed25519 signature verifies with the openssl CLI") {
   fs::remove_all(dir);
 }
 
-TEST_CASE("sign/verify reject keys of another profile") {
-  auto ec = PrivateKey::from_evp(generate("EC", "prime256v1"));
-  REQUIRE(ec.has_value());
-  auto r = sign(*ec, bytes_of("x"));
-  CHECK_FALSE(r.has_value());  // ECDSA belum diimplementasi (T08)
+TEST_CASE("Ed25519 verify rejects a signature made by another profile") {
+  Pair ed = ed25519_pair();
+  EvpPkey ec_raw = generate("EC", "prime256v1");
+  auto ec_priv = PrivateKey::from_evp(std::move(ec_raw));
+  REQUIRE(ec_priv.has_value());
+  auto ec_sig = sign(*ec_priv, bytes_of("x"));
+  REQUIRE(ec_sig.has_value());  // 64 byte, panjangnya sama dengan sig Ed25519
+  CHECK_FALSE(verify(ed.pub, bytes_of("x"), *ec_sig));
 }

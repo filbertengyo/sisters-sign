@@ -1,5 +1,6 @@
 #include "crypto/crypto.hpp"
 
+#include "crypto/ecdsa.hpp"
 #include "crypto/ed25519.hpp"
 #include "crypto/keys.hpp"
 
@@ -14,6 +15,7 @@ Outcome<Bytes> sign(const PrivateKey& key, ByteView message) {
     case Algorithm::Ed25519:
       return ed25519_sign(key, message);
     case Algorithm::EcdsaP256:
+      return ecdsa_sign(key, message);
     case Algorithm::RsaPss:
       return make_error(Status::UnsupportedAlgorithm, "profil belum diimplementasi");
   }
@@ -25,6 +27,7 @@ bool verify(const PublicKey& key, ByteView message, ByteView signature) {
     case Algorithm::Ed25519:
       return ed25519_verify(key, message, signature);
     case Algorithm::EcdsaP256:
+      return ecdsa_verify(key, message, signature);
     case Algorithm::RsaPss:
       return false;
   }
