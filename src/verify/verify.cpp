@@ -91,26 +91,9 @@ Result verify(const fs::path& file, const fs::path& bundle_path, const fs::path&
   auto store = trust::TrustStore::parse(*store_text);
   if (!store) return failure(store.error());
 
-  // ---- 3. UNSUPPORTED_ALGORITHM ----------------------------------------------------------------
-  crypto::Algorithm algorithm;
-  if (!manifest::parse_algorithm_name(manifest->algorithm, algorithm)) {
-    return failure(Status::UnsupportedAlgorithm,
-                   "algoritma tidak didukung: " + manifest->algorithm);
-  }
-
-  // ---- 4. KEY_NOT_TRUSTED ----------------------------------------------------------------------
-  // Satu-satunya pencarian kunci: keyid + package + profil dari manifest. Tidak ada fallback.
-  auto key = store->lookup(manifest->keyid, manifest->package, algorithm);
-  if (!key) return failure(key.error());
-
-  // ---- 5. INVALID_SIGNATURE --------------------------------------------------------------------
-  // Atas byte M persis seperti di bundle (bukan hasil serialisasi ulang).
-  if (!crypto::verify(**key, bundle->manifest, bundle->signature)) {
-    return failure(Status::InvalidSignature, "tanda tangan tidak valid");
-  }
-
-  // Dari sini manifest terotentikasi; aman dilaporkan.
-  auto authenticated = [&](Status status, std::string message) {
+  // Manifest berhasil dibaca: bagi spek (Tabel 2.9) field-nya boleh dilaporkan dari sini, hanya
+  // sebagai penjelasan hasil dan bukan data yang sah sebelum tanda tangan terbukti.
+  auto described = [&](Status status, std::string message) {
     Result r = fail(status, std::move(message));
     r.algorithm = manifest->algorithm;
     r.keyid = manifest->keyid;
@@ -119,22 +102,41 @@ Result verify(const fs::path& file, const fs::path& bundle_path, const fs::path&
     return r;
   };
 
+  // ---- 3. UNSUPPORTED_ALGORITHM ----------------------------------------------------------------
+  crypto::Algorithm algorithm;
+  if (!manifest::parse_algorithm_name(manifest->algorithm, algorithm)) {
+    return described(Status::UnsupportedAlgorithm,
+                     "algoritma tidak didukung: " + manifest->algorithm);
+  }
+
+  // ---- 4. KEY_NOT_TRUSTED ----------------------------------------------------------------------
+  // Satu-satunya pencarian kunci: keyid + package yang DIHARAPKAN PENGGUNA + profil dari manifest.
+  // Tidak ada fallback ke kunci, profil, atau trust store lain.
+  auto key = store->lookup(manifest->keyid, package, algorithm);
+  if (!key) return described(key.error().status, key.error().message);
+
+  // ---- 5. INVALID_SIGNATURE --------------------------------------------------------------------
+  // Atas byte M persis seperti di bundle (bukan hasil serialisasi ulang).
+  if (!crypto::verify(**key, bundle->manifest, bundle->signature)) {
+    return described(Status::InvalidSignature, "tanda tangan tidak valid");
+  }
+
   // ---- 6. METADATA_MISMATCH --------------------------------------------------------------------
   if (manifest->package != package) {
-    return authenticated(Status::MetadataMismatch, "package tidak cocok: manifest '" +
-                                                       manifest->package + "', diharapkan '" +
-                                                       std::string(package) + "'");
+    return described(Status::MetadataMismatch, "package tidak cocok: manifest '" +
+                                                   manifest->package + "', diharapkan '" +
+                                                   std::string(package) + "'");
   }
   if (manifest->version != version) {
-    return authenticated(Status::MetadataMismatch, "version tidak cocok: manifest '" +
-                                                       manifest->version + "', diharapkan '" +
-                                                       std::string(version) + "'");
+    return described(Status::MetadataMismatch, "version tidak cocok: manifest '" +
+                                                   manifest->version + "', diharapkan '" +
+                                                   std::string(version) + "'");
   }
   const std::string basename = file.filename().string();
   if (manifest->artifact.name != basename) {
-    return authenticated(Status::MetadataMismatch, "nama artefak tidak cocok: manifest '" +
-                                                       manifest->artifact.name + "', berkas '" +
-                                                       basename + "'");
+    return described(Status::MetadataMismatch, "nama artefak tidak cocok: manifest '" +
+                                                   manifest->artifact.name + "', berkas '" +
+                                                   basename + "'");
   }
 
   // ---- 7. ARTIFACT_MISMATCH --------------------------------------------------------------------
@@ -142,15 +144,15 @@ Result verify(const fs::path& file, const fs::path& bundle_path, const fs::path&
   const auto actual_size = fs::file_size(file, ec);
   if (ec) return failure(Status::InputError, "ukuran artefak tidak terbaca: " + file.string());
   if (actual_size != manifest->artifact.size) {
-    return authenticated(Status::ArtifactMismatch, "ukuran artefak tidak cocok: manifest " +
-                                                       std::to_string(manifest->artifact.size) +
-                                                       ", berkas " + std::to_string(actual_size));
+    return described(Status::ArtifactMismatch, "ukuran artefak tidak cocok: manifest " +
+                                                   std::to_string(manifest->artifact.size) +
+                                                   ", berkas " + std::to_string(actual_size));
   }
   std::uint64_t hashed = 0;
   auto sha = sha256_of_file(file, hashed);
   if (!sha) return failure(sha.error());
   if (hashed != manifest->artifact.size || *sha != manifest->artifact.sha256) {
-    return authenticated(Status::ArtifactMismatch, "SHA-256 artefak tidak cocok");
+    return described(Status::ArtifactMismatch, "SHA-256 artefak tidak cocok");
   }
 
   // ---- OK --------------------------------------------------------------------------------------

@@ -78,9 +78,8 @@ struct AlgCase {
 
 const AlgCase kCases[] = {
     {"ed25519", crypto::Algorithm::Ed25519, "ed25519"},
-    {"ecdsa", crypto::Algorithm::EcdsaP256, "ecdsa-p256"},
-    {"ecdsa-p256", crypto::Algorithm::EcdsaP256, "ecdsa-p256"},
-    {"rsa-pss", crypto::Algorithm::RsaPss, "rsa-pss"},
+    {"ecdsa-p256-sha256", crypto::Algorithm::EcdsaP256, "ecdsa-p256-sha256"},
+    {"rsa-pss-sha256", crypto::Algorithm::RsaPss, "rsa-pss-sha256"},
 };
 
 }  // namespace
@@ -182,7 +181,7 @@ TEST_CASE("keygen: -force menimpa dan memperketat permission") {
   const std::string before = slurp(prefix + ".key.pem");
   ::chmod((prefix + ".key.pem").c_str(), 0644);
 
-  auto second = run_cli({"keygen", "-algorithm", "ecdsa", "-out", prefix, "-force"});
+  auto second = run_cli({"keygen", "-algorithm", "ecdsa-p256-sha256", "-out", prefix, "-force"});
   REQUIRE(second.code == 0);
   CHECK(slurp(prefix + ".key.pem") != before);
   CHECK(field(second.out, "keyid") != field(first.out, "keyid"));
@@ -195,7 +194,8 @@ TEST_CASE("keygen: -force menimpa dan memperketat permission") {
 TEST_CASE("keygen: algoritma tidak dikenal -> exit 2 tanpa berkas") {
   TempDir d;
   const std::string prefix = (d.path / "k").string();
-  for (const char* bad : {"rsa", "RSA-PSS", "ed448", "ecdsa-p384", "secp256k1"}) {
+  for (const char* bad :
+       {"rsa", "rsa-pss", "ecdsa", "ecdsa-p256", "RSA-PSS", "ed448", "ecdsa-p384"}) {
     INFO(bad);
     auto r = run_cli({"keygen", "-algorithm", bad, "-out", prefix});
     CHECK(r.code == 2);
@@ -231,7 +231,6 @@ TEST_CASE("keygen: berkas terbaca oleh openssl CLI") {
     return;
   }
   for (const auto& c : kCases) {
-    if (std::string(c.flag) == "ecdsa-p256") continue;
     INFO(c.flag);
     TempDir d;
     const std::string prefix = (d.path / "k").string();

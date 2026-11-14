@@ -85,7 +85,10 @@ TEST_CASE("manifest: serialize menolak field di luar aturan") {
   bad([](Manifest& m) { m.package = "Bad Name"; });
   bad([](Manifest& m) { m.package = ""; });
   bad([](Manifest& m) { m.version = "1 2"; });
-  bad([](Manifest& m) { m.algorithm = "ED25519"; });
+  bad([](Manifest& m) { m.algorithm = "ed\"25519"; });
+  bad([](Manifest& m) { m.algorithm = "ed\\25519"; });
+  bad([](Manifest& m) { m.algorithm = "ed\n25519"; });
+  bad([](Manifest& m) { m.algorithm = std::string(129, 'a'); });
   bad([](Manifest& m) { m.keyid = std::string(63, 'a'); });
   bad([](Manifest& m) { m.keyid = std::string(64, 'A'); });
   bad([](Manifest& m) { m.artifact.name = "../x"; });
@@ -256,6 +259,14 @@ TEST_CASE("manifest: validator") {
   CHECK_FALSE(valid_version("+1"));
   CHECK(valid_artifact_name("a.b-c_d"));
   CHECK_FALSE(valid_artifact_name("."));
+  CHECK_FALSE(valid_artifact_name(".hidden"));
+  CHECK_FALSE(valid_artifact_name("-x"));
+  CHECK_FALSE(valid_artifact_name("_x"));
+  CHECK(valid_artifact_name(std::string(128, 'a')));
+  CHECK_FALSE(valid_artifact_name(std::string(129, 'a')));
+  CHECK(valid_algorithm_token("RSA-PSS"));
+  CHECK(valid_algorithm_token(""));
+  CHECK_FALSE(valid_algorithm_token("caf\xC3\xA9"));
   CHECK_FALSE(valid_artifact_name(std::string(256, 'a')));
   CHECK(valid_hex64(std::string(64, '0')));
   CHECK_FALSE(valid_hex64(std::string(64, 'g')));

@@ -8,16 +8,18 @@
 //     biasa).
 //  2. FORMAT_ERROR: bundle, manifest (harus kanonik), atau trust store tidak lolos parse strict.
 //  3. UNSUPPORTED_ALGORITHM: nama algoritma di manifest di luar tiga profil.
-//  4. KEY_NOT_TRUSTED: keyid manifest tidak ada di trust store untuk package dan profil itu. Pubkey
-//     hanya diambil dari trust store, tidak pernah dari bundle; tidak ada kunci lain yang dicoba.
-//  5. INVALID_SIGNATURE: signature tidak cocok dengan byte M persis seperti di bundle.
+//  4. KEY_NOT_TRUSTED: keyid manifest tidak ada di trust store, profil kunci berbeda dari manifest,
+//     atau kunci tidak diizinkan untuk package yang DIHARAPKAN PENGGUNA. Pubkey hanya diambil dari
+//     trust store, tidak pernah dari bundle; tidak ada kunci lain yang dicoba.
+//  5. INVALID_SIGNATURE: signature tidak cocok dengan byte M persis seperti di bundle (panjang
+//     atau nilai r/s yang tidak sah juga di sini).
 //  6. METADATA_MISMATCH: package/version manifest berbeda dari masukan pengguna, atau
 //     artifact.name berbeda dari basename artefak.
 //  7. ARTIFACT_MISMATCH: ukuran lalu SHA-256 artefak berbeda dari manifest.
 //
-// Hanya hasil yang sudah terotentikasi (OK, METADATA_MISMATCH, ARTIFACT_MISMATCH: signature sudah
-// lolos) yang mengisi algorithm/keyid/package/version di Result; pada kegagalan sebelumnya isi
-// manifest belum bisa dipercaya sehingga tidak dilaporkan.
+// Sesuai Tabel 2.9, algorithm/keyid/package/version di Result diisi dari manifest begitu manifest
+// berhasil dibaca (setelah langkah 2); sebelum itu kosong (null di JSON). Pada kegagalan, nilai itu
+// hanya penjelasan dan bukan data yang sah.
 #include <filesystem>
 #include <string_view>
 

@@ -29,7 +29,7 @@ int fail(Io io, const Error& e) {
 
 int trust_add(std::span<const std::string_view> args, Io io) {
   static constexpr Flag kFlags[] = {
-      {"trust-store", true, true, "berkas trust store (dibuat bila belum ada)"},
+      {"store", true, true, "berkas trust store (dibuat bila belum ada)"},
       {"key", true, true, "pubkey SPKI PEM yang dipercaya"},
       {"package", true, true, "package yang boleh ditandatangani kunci ini"},
   };
@@ -43,7 +43,7 @@ int trust_add(std::span<const std::string_view> args, Io io) {
   auto id = crypto::keyid(*key);
   if (!id) return fail(io, id.error());
 
-  const std::string path(p.value("trust-store"));
+  const std::string path(p.value("store"));
   auto store = trust::TrustStore::load_or_empty(path);
   if (!store) return fail(io, store.error());
   if (auto r = store->add(*key, p.value("package")); !r) return fail(io, r.error());
@@ -56,12 +56,12 @@ int trust_add(std::span<const std::string_view> args, Io io) {
 
 int trust_list(std::span<const std::string_view> args, Io io) {
   static constexpr Flag kFlags[] = {
-      {"trust-store", true, true, "berkas trust store"},
+      {"store", true, true, "berkas trust store"},
   };
   Parsed p;
   if (auto rc = parse_or_exit("trust list", "List trusted keys.", kFlags, args, io, p)) return *rc;
 
-  auto store = trust::TrustStore::load(std::string(p.value("trust-store")));
+  auto store = trust::TrustStore::load(std::string(p.value("store")));
   if (!store) return fail(io, store.error());
 
   io.out << "KEYID                                                            ALGORITHM   "
@@ -81,7 +81,7 @@ int trust_list(std::span<const std::string_view> args, Io io) {
 
 int trust_remove(std::span<const std::string_view> args, Io io) {
   static constexpr Flag kFlags[] = {
-      {"trust-store", true, true, "berkas trust store"},
+      {"store", true, true, "berkas trust store"},
       {"keyid", true, true, "keyid (64 hex) yang dihapus"},
   };
   Parsed p;
@@ -89,7 +89,7 @@ int trust_remove(std::span<const std::string_view> args, Io io) {
           parse_or_exit("trust remove", "Remove a trusted key by keyid.", kFlags, args, io, p)) {
     return *rc;
   }
-  const std::string path(p.value("trust-store"));
+  const std::string path(p.value("store"));
   auto store = trust::TrustStore::load(path);
   if (!store) return fail(io, store.error());
   if (auto r = store->remove(p.value("keyid")); !r) return fail(io, r.error());

@@ -80,12 +80,13 @@ int run_sign(std::span<const std::string_view> args, Io io) {
     return fail(io, "-package tidak sesuai pola ^[a-z0-9][a-z0-9._-]{0,63}$");
   }
   if (!manifest::valid_version(parsed.value("version"))) {
-    return fail(io, "-version tidak sesuai pola ^[0-9A-Za-z][0-9A-Za-z._+-]{0,63}$");
+    return fail(io, "-version tidak sesuai pola ^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$");
   }
   const fs::path file(std::string(parsed.value("file")));
   const std::string name = file.filename().string();
   if (!manifest::valid_artifact_name(name)) {
-    return fail(io, "nama berkas artefak tidak sesuai pola ^[A-Za-z0-9._-]{1,255}$: " + name);
+    return fail(
+        io, "nama berkas artefak tidak sesuai pola ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$: " + name);
   }
 
   // 2. Kunci; profil algoritma diturunkan dari kunci.

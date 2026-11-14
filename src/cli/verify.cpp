@@ -70,14 +70,21 @@ std::string to_json(const Result& r) {
   append_json_string(out, to_string(r.status));
   out += R"(,"message":)";
   append_json_string(out, r.message);
-  out += R"(,"algorithm":)";
-  append_json_string(out, r.algorithm);
-  out += R"(,"keyid":)";
-  append_json_string(out, r.keyid);
-  out += R"(,"package":)";
-  append_json_string(out, r.package);
-  out += R"(,"version":)";
-  append_json_string(out, r.version);
+  // Tabel 2.9: string atau null (null bila belum dapat dibaca dari manifest).
+  const auto nullable = [&out](std::string_view key, const std::string& value) {
+    out += ",\"";
+    out += key;
+    out += "\":";
+    if (value.empty()) {
+      out += "null";
+    } else {
+      append_json_string(out, value);
+    }
+  };
+  nullable("algorithm", r.algorithm);
+  nullable("keyid", r.keyid);
+  nullable("package", r.package);
+  nullable("version", r.version);
   out += "}";
   return out;
 }
@@ -85,6 +92,8 @@ std::string to_json(const Result& r) {
 }  // namespace
 
 int run_verify(std::span<const std::string_view> args, Io io) {
+  static constexpr std::string_view kSummary =
+      "Verify an artifact against a bundle and trust store.";
   static constexpr Flag kFlags[] = {
       {"file", true, true, "artefak yang diverifikasi"},
       {"bundle", true, true, "berkas bundle"},
@@ -93,10 +102,24 @@ int run_verify(std::span<const std::string_view> args, Io io) {
       {"version", true, true, "versi yang diharapkan"},
       {"json", false, false, "cetak hasil sebagai satu objek JSON ke stdout"},
   };
+  // Tabel 2.10: pada `verify -json`, kesalahan pemakaian juga menghasilkan JSON berstatus
+  // INPUT_ERROR (exit 2); pesan dan usage tetap ke stderr.
+  bool wants_json = false;
+  for (const auto& a : args) wants_json = wants_json || a == "-json" || a == "--json";
+
   Parsed parsed;
-  if (auto rc = parse_or_exit("verify", "Verify an artifact against a bundle and trust store.",
-                              kFlags, args, io, parsed)) {
-    return *rc;
+  {
+    auto r = parse_flags(args, kFlags);
+    if (!r) {
+      io.err << "error: " << r.error().message << "\n" << usage_text("verify", kSummary, kFlags);
+      if (wants_json) io.out << to_json(fail(Status::InputError, r.error().message)) << "\n";
+      return exit_code(Status::InputError);
+    }
+    if (r->help_requested()) {
+      io.out << usage_text("verify", kSummary, kFlags);
+      return 0;
+    }
+    parsed = std::move(*r);
   }
 
   const Result result = verifier::verify(

@@ -7,6 +7,7 @@
 #include <functional>
 #include <glaze/glaze.hpp>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -29,10 +30,10 @@ struct JsonResult {
   bool valid = false;
   std::string status;
   std::string message;
-  std::string algorithm;
-  std::string keyid;
-  std::string package;
-  std::string version;
+  std::optional<std::string> algorithm;
+  std::optional<std::string> keyid;
+  std::optional<std::string> package;
+  std::optional<std::string> version;
 };
 
 struct Run {
@@ -82,9 +83,9 @@ struct Env {
   explicit Env(const char* algorithm = "ed25519") {
     spit(artifact, "isi artefak\n");
     REQUIRE(run_cli({"keygen", "-algorithm", algorithm, "-out", prefix}).code == 0);
-    REQUIRE(run_cli({"trust", "add", "-trust-store", store, "-key", prefix + ".pub.pem", "-package",
-                     "demo"})
-                .code == 0);
+    REQUIRE(
+        run_cli({"trust", "add", "-store", store, "-key", prefix + ".pub.pem", "-package", "demo"})
+            .code == 0);
     REQUIRE(run_cli({"sign", "-file", artifact, "-package", "demo", "-version", "1.0.0", "-key",
                      prefix + ".key.pem", "-out", bundle})
                 .code == 0);
@@ -129,7 +130,7 @@ void no_key_material(const Run& r) {
 }  // namespace
 
 TEST_CASE("verify cli: OK untuk tiga algoritma, exit 0") {
-  for (const char* alg : {"ed25519", "ecdsa", "rsa-pss"}) {
+  for (const char* alg : {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}) {
     INFO(alg);
     Env e(alg);
     auto r = e.verify();
@@ -152,7 +153,8 @@ TEST_CASE("verify cli: -json OK -> satu objek JSON, exit 0") {
   CHECK(j.algorithm == "ed25519");
   CHECK(j.package == "demo");
   CHECK(j.version == "1.0.0");
-  CHECK(j.keyid.size() == 64);
+  REQUIRE(j.keyid.has_value());
+  CHECK(j.keyid->size() == 64);
 }
 
 TEST_CASE("verify cli: urutan field JSON tetap") {
@@ -181,7 +183,7 @@ TEST_CASE("verify cli: tiap status gagal -> exit code, stderr, dan JSON yang ben
   cases.push_back(
       {"FORMAT_ERROR", "FORMAT_ERROR", 1, [](Env& e) { spit(e.bundle, "bukan json"); }});
   cases.push_back({"KEY_NOT_TRUSTED", "KEY_NOT_TRUSTED", 1, [](Env& e) {
-                     REQUIRE(run_cli({"trust", "remove", "-trust-store", e.store, "-keyid",
+                     REQUIRE(run_cli({"trust", "remove", "-store", e.store, "-keyid",
                                       [&] {
                                         auto s = slurp(e.store);
                                         auto p = s.find("\"keyid\": \"") + 10;
@@ -245,16 +247,45 @@ TEST_CASE("verify cli: UNSUPPORTED_ALGORITHM (manifest ditandatangani sah)") {
   CHECK(parse_json(j.out).status == "UNSUPPORTED_ALGORITHM");
 }
 
-TEST_CASE("verify cli: JSON gagal sebelum signature tidak membocorkan isi manifest") {
+TEST_CASE("verify cli: field JSON null selama manifest belum terbaca, terisi sesudahnya") {
+  SUBCASE("FORMAT_ERROR -> semua null") {
+    Env e;
+    spit(e.bundle, "bukan json");
+    auto r = e.verify(true);
+    CHECK(r.code == 1);
+    auto j = parse_json(r.out);
+    CHECK(j.status == "FORMAT_ERROR");
+    CHECK_FALSE(j.algorithm.has_value());
+    CHECK_FALSE(j.keyid.has_value());
+    CHECK_FALSE(j.package.has_value());
+    CHECK_FALSE(j.version.has_value());
+    CHECK(r.out.find(R"("keyid":null)") != std::string::npos);
+  }
+  SUBCASE("INPUT_ERROR -> semua null") {
+    Env e;
+    fs::remove(e.artifact);
+    auto j = parse_json(e.verify(true).out);
+    CHECK(j.status == "INPUT_ERROR");
+    CHECK_FALSE(j.keyid.has_value());
+  }
+  SUBCASE("KEY_NOT_TRUSTED -> terisi dari manifest") {
+    Env e;
+    spit(e.store, R"({"schema":"minisign-trust/v1","keys":[]})");
+    auto j = parse_json(e.verify(true).out);
+    CHECK(j.status == "KEY_NOT_TRUSTED");
+    CHECK(j.algorithm == "ed25519");
+    CHECK(j.package == "demo");
+    CHECK(j.version == "1.0.0");
+    REQUIRE(j.keyid.has_value());
+    CHECK(j.keyid->size() == 64);
+  }
+}
+
+TEST_CASE("verify cli: package yang diminta pengguna tidak diizinkan -> KEY_NOT_TRUSTED") {
   Env e;
-  REQUIRE(slurp(e.store).size() > 0);
-  spit(e.store, R"({"schema":"minisign-trust/v1","keys":[]})");
-  auto r = e.verify(true);
+  auto r = e.verify(true, "lain", "1.0.0");
   CHECK(r.code == 1);
-  auto j = parse_json(r.out);
-  CHECK(j.status == "KEY_NOT_TRUSTED");
-  CHECK(j.keyid.empty());
-  CHECK(j.package.empty());
+  CHECK(parse_json(r.out).status == "KEY_NOT_TRUSTED");
 }
 
 TEST_CASE("verify cli: METADATA_MISMATCH dengan JSON memuat field terotentikasi") {
@@ -271,14 +302,14 @@ TEST_CASE("verify cli: JSON tetap valid untuk karakter khusus dan UTF-8 tidak sa
        {std::string("a\"b\\c"), std::string("tab\there"), std::string("baris\nbaru"),
         std::string("\xff\xfe"), std::string("caf\xC3\xA9"), std::string("\xED\xA0\x80")}) {
     INFO(weird);
-    auto r = e.verify(true, weird, "1.0.0");
+    auto r = e.verify(true, "demo", weird);
     CHECK(r.code == 1);
     auto j = parse_json(r.out);
     CHECK(j.status == "METADATA_MISMATCH");
     CHECK_FALSE(j.message.empty());
   }
   // Karakter kontrol/quote muncul apa adanya setelah di-decode.
-  auto j = parse_json(e.verify(true, "a\"b\\c", "1.0.0").out);
+  auto j = parse_json(e.verify(true, "demo", "a\"b\\c").out);
   CHECK(j.message.find("a\"b\\c") != std::string::npos);
 }
 
@@ -288,13 +319,24 @@ TEST_CASE("verify cli: stdin ditutup tidak menggantung (tidak membaca stdin)") {
   CHECK(e.verify().code == 0);
 }
 
-TEST_CASE("verify cli: flag wajib hilang -> exit 2 tanpa JSON") {
+TEST_CASE("verify cli: kesalahan pemakaian -> exit 2; dengan -json tetap satu objek JSON") {
   auto r = run_cli({"verify", "-file", "a", "-json"});
   CHECK(r.code == 2);
-  CHECK(r.out.empty());
   CHECK(r.err.find("flag wajib hilang") != std::string::npos);
+  auto j = parse_json(r.out);
+  CHECK_FALSE(j.valid);
+  CHECK(j.status == "INPUT_ERROR");
+  CHECK_FALSE(j.keyid.has_value());
+
+  auto unknown = run_cli({"verify", "-bogus", "x", "--json"});
+  CHECK(unknown.code == 2);
+  CHECK(parse_json(unknown.out).status == "INPUT_ERROR");
+
+  // Tanpa -json: stdout kosong.
+  auto plain = run_cli({"verify", "-file", "a"});
+  CHECK(plain.code == 2);
+  CHECK(plain.out.empty());
   CHECK(run_cli({"verify", "-help"}).code == 0);
-  CHECK(run_cli({"verify", "-bogus", "x"}).code == 2);
 }
 
 TEST_CASE("verify cli: input tidak berubah setelah verify") {
