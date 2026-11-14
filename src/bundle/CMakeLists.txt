@@ -1,1 +1,1 @@
-# Tambahkan source lewat: target_sources(core PRIVATE ...)
+target_sources(core PRIVATE bundle.cpp)

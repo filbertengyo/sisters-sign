@@ -2,3 +2,4 @@
 *.bin binary
 *.sig binary
 tests/fixtures/manifest/*.json -text
+tests/fixtures/bundle/*.json -text

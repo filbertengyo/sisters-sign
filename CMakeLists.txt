@@ -63,7 +63,8 @@ add_executable(unit_tests
   tests/unit/hash_test.cpp
   tests/unit/base64_test.cpp
   tests/unit/json_scan_test.cpp
-  tests/unit/manifest_test.cpp)
+  tests/unit/manifest_test.cpp
+  tests/unit/bundle_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
