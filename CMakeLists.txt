@@ -70,7 +70,8 @@ add_executable(unit_tests
   tests/unit/cli_keygen_test.cpp
   tests/unit/cli_trust_test.cpp
   tests/unit/cli_sign_test.cpp
-  tests/unit/verify_test.cpp)
+  tests/unit/verify_test.cpp
+  tests/unit/cli_verify_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
