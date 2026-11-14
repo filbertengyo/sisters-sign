@@ -1,1 +1,1 @@
-# Tambahkan source lewat: target_sources(core PRIVATE ...)
+target_sources(core PRIVATE args.cpp cli.cpp keygen.cpp sign.cpp verify.cpp trust.cpp)

@@ -64,10 +64,17 @@ add_executable(unit_tests
   tests/unit/base64_test.cpp
   tests/unit/json_scan_test.cpp
   tests/unit/manifest_test.cpp
-  tests/unit/bundle_test.cpp)
+  tests/unit/bundle_test.cpp
+  tests/unit/trust_test.cpp
+  tests/unit/cli_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
+
+# CLI tidak boleh menunggu input: stdin ditutup (/dev/null), harus keluar 2 tanpa hang.
+add_test(NAME cli_no_stdin
+  COMMAND sh -c "$<TARGET_FILE:sister-sign> keygen < /dev/null > /dev/null 2>&1; test $? -eq 2")
+set_tests_properties(cli_no_stdin PROPERTIES TIMEOUT 10)
 
 # Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md
 add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
