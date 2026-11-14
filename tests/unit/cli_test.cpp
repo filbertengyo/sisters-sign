@@ -126,7 +126,8 @@ TEST_CASE("cli: flag tidak dikenal di subcommand -> exit 2") {
 }
 
 TEST_CASE("cli: handler yang belum diisi mengembalikan 2, bukan sukses palsu") {
-  auto r = run_cli({"keygen", "-algorithm", "ed25519", "-out", "x"});
+  auto r =
+      run_cli({"sign", "-file", "a", "-package", "p", "-version", "1", "-key", "k", "-out", "o"});
   CHECK(r.code == 2);
   CHECK(r.err.find("belum diimplementasi") != std::string::npos);
   CHECK(run_cli({"sign", "-file", "a", "-package", "p", "-version", "1", "-key", "k", "-out", "o"})
