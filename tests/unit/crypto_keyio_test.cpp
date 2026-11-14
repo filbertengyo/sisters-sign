@@ -44,6 +44,13 @@ fs::path temp_dir(const char* name) {
 
 Status err_status(const auto& r) { return r.error().status; }
 
+// Permission berkas (9 bit rwx); -1 bila stat gagal.
+int mode_of(const fs::path& p) {
+  struct stat st;
+  if (::stat(p.c_str(), &st) != 0) return -1;
+  return static_cast<int>(st.st_mode & 0777);
+}
+
 }  // namespace
 
 TEST_CASE("keygen -> PEM -> load -> sign -> verify for all three profiles") {
@@ -241,9 +248,7 @@ TEST_CASE("key files: write, read back, no overwrite, permissions") {
     auto other = generate_keypair(Algorithm::Ed25519);
     REQUIRE(other.has_value());
     REQUIRE(write_private_key(priv_path, other->priv, true).has_value());
-    struct stat st{};
-    REQUIRE(::stat(priv_path.c_str(), &st) == 0);
-    CHECK((st.st_mode & 0777) == 0600);
+    CHECK(mode_of(priv_path) == 0600);
     auto loaded = read_private_key(priv_path);
     REQUIRE(loaded.has_value());
     auto loaded_pub = public_key_of(*loaded);
@@ -251,11 +256,10 @@ TEST_CASE("key files: write, read back, no overwrite, permissions") {
     CHECK(*keyid(*loaded_pub) == *keyid(other->pub));
   }
   SUBCASE("private key file is not group/world accessible") {
-    struct stat st{};
-    REQUIRE(::stat(priv_path.c_str(), &st) == 0);
-    CHECK((st.st_mode & 0077) == 0);
-    REQUIRE(::stat(pub_path.c_str(), &st) == 0);
-    CHECK((st.st_mode & 0600) == 0600);
+    REQUIRE(mode_of(priv_path) >= 0);
+    CHECK((mode_of(priv_path) & 0077) == 0);
+    REQUIRE(mode_of(pub_path) >= 0);
+    CHECK((mode_of(pub_path) & 0600) == 0600);
   }
   SUBCASE("missing / unwritable paths") {
     auto missing = read_private_key(dir / "nope.pem");
