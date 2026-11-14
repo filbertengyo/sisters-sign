@@ -58,6 +58,7 @@ add_executable(unit_tests
   tests/unit/crypto_ecdsa_test.cpp
   tests/unit/crypto_rsa_test.cpp
   tests/unit/crypto_keyid_test.cpp
+  tests/unit/crypto_keyio_test.cpp
   tests/unit/hex_test.cpp
   tests/unit/hash_test.cpp
   tests/unit/base64_test.cpp)
