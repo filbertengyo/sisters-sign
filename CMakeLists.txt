@@ -49,7 +49,7 @@ add_executable(sister-sign src/main.cpp)
 target_link_libraries(sister-sign PRIVATE core project_options)
 
 enable_testing()
-add_executable(unit_tests tests/unit/main.cpp tests/unit/smoke_test.cpp tests/unit/result_test.cpp)
+add_executable(unit_tests tests/unit/main.cpp tests/unit/smoke_test.cpp tests/unit/result_test.cpp tests/unit/crypto_raii_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
 add_test(NAME unit_tests COMMAND unit_tests)
 
