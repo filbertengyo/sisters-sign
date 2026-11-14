@@ -1,6 +1,7 @@
 #pragma once
 // Helper pembuat kunci untuk unit test crypto.
 #include <doctest/doctest.h>
+#include <openssl/rsa.h>
 #include <openssl/x509.h>
 
 #include <string_view>
@@ -13,6 +14,20 @@ namespace test {
 
 using namespace sister_sign;
 using namespace sister_sign::crypto;
+
+// RSA dengan ukuran/eksponen tertentu (keygen 3072 butuh beberapa detik; pakai ulang kuncinya).
+inline EvpPkey generate_rsa(unsigned bits, unsigned long e = 65537) {
+  EvpPkeyCtx ctx = make_pkey_ctx("RSA");
+  REQUIRE(ctx != nullptr);
+  REQUIRE(EVP_PKEY_keygen_init(ctx.get()) == 1);
+  REQUIRE(EVP_PKEY_CTX_set_rsa_keygen_bits(ctx.get(), static_cast<int>(bits)) > 0);
+  Bignum be = make_bignum();
+  REQUIRE(BN_set_word(be.get(), e) == 1);
+  REQUIRE(EVP_PKEY_CTX_set1_rsa_keygen_pubexp(ctx.get(), be.get()) > 0);
+  EVP_PKEY* raw = nullptr;
+  REQUIRE(EVP_PKEY_keygen(ctx.get(), &raw) == 1);
+  return EvpPkey(raw);
+}
 
 inline EvpPkey generate(const char* algorithm, const char* group = nullptr) {
   EvpPkeyCtx ctx = make_pkey_ctx(algorithm);
