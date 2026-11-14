@@ -70,7 +70,8 @@ add_executable(unit_tests
   tests/unit/cli_keygen_test.cpp
   tests/unit/cli_trust_test.cpp
   tests/unit/cli_sign_test.cpp
-  tests/unit/verify_test.cpp)
+  tests/unit/verify_test.cpp
+  tests/unit/cli_verify_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
@@ -79,6 +80,23 @@ add_test(NAME unit_tests COMMAND unit_tests)
 add_test(NAME cli_no_stdin
   COMMAND sh -c "$<TARGET_FILE:sister-sign> keygen < /dev/null > /dev/null 2>&1; test $? -eq 2")
 set_tests_properties(cli_no_stdin PROPERTIES TIMEOUT 10)
+
+# Harness e2e (tests/e2e): kasus contoh harus lulus, dan harness harus mendeteksi kasus gagal.
+add_test(NAME e2e_cases
+  COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/run.sh $<TARGET_FILE:sister-sign>
+          ${CMAKE_SOURCE_DIR}/tests/e2e/cases ${CMAKE_BINARY_DIR}/e2e-results)
+add_test(NAME e2e_harness_selftest
+  COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/selftest.sh $<TARGET_FILE:sister-sign>
+          ${CMAKE_BINARY_DIR}/e2e-selftest)
+set_tests_properties(e2e_cases e2e_harness_selftest PROPERTIES TIMEOUT 300)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/e2e-selftest)
+
+# Satu perintah untuk laporan: jalankan semua kasus dan tulis bukti + tabel ke tests/results/.
+add_custom_target(e2e_report
+  COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/run.sh $<TARGET_FILE:sister-sign>
+          ${CMAKE_SOURCE_DIR}/tests/e2e/cases ${CMAKE_SOURCE_DIR}/tests/results
+  DEPENDS sister-sign
+  USES_TERMINAL)
 
 # Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md
 add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)

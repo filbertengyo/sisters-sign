@@ -5,7 +5,9 @@ compile_commands.json
 .vscode/
 .idea/
 *.swp
-tests/results/
+# bukti per kasus tetap lokal; tabel hasil untuk laporan boleh di-commit
+tests/results/*
+!tests/results/results.md
 *.key.pem
 !tests/fixtures/**/*.key.pem
 !ci/**/*.key.pem

@@ -130,8 +130,8 @@ TEST_CASE("trust: store kosong sah dan tidak mempercayai siapa pun") {
 
 TEST_CASE("trust: tiga algoritma dimuat dan lookup mengembalikan kunci") {
   const std::string json =
-      store_json(good_entry(ed_key(), "ed25519") + "," + good_entry(ec_key(), "ecdsa-p256") + "," +
-                 good_entry(rsa_key(), "rsa-pss"));
+      store_json(good_entry(ed_key(), "ed25519") + "," + good_entry(ec_key(), "ecdsa-p256-sha256") +
+                 "," + good_entry(rsa_key(), "rsa-pss-sha256"));
   auto s = TrustStore::parse(json);
   REQUIRE(s.has_value());
   CHECK(s->entries().size() == 3);
@@ -186,8 +186,8 @@ TEST_CASE("trust: pelanggaran struktur ditolak (FORMAT_ERROR)") {
     rejects(store_json(entry_json("abc", "ed25519", ed_key().pem)));
   }
   SUBCASE("algoritma tidak cocok dengan kunci") {
-    rejects(store_json(entry_json(ed_key().id, "ecdsa-p256", ed_key().pem)));
-    rejects(store_json(entry_json(ec_key().id, "rsa-pss", ec_key().pem)));
+    rejects(store_json(entry_json(ed_key().id, "ecdsa-p256-sha256", ed_key().pem)));
+    rejects(store_json(entry_json(ec_key().id, "rsa-pss-sha256", ec_key().pem)));
   }
   SUBCASE("algoritma tak dikenal") {
     rejects(store_json(entry_json(ed_key().id, "ed448", ed_key().pem)));

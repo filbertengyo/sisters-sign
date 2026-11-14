@@ -284,7 +284,7 @@ TEST_CASE("verify: KEY_NOT_TRUSTED") {
     expect(s.run(), Status::KeyNotTrusted);
   }
   SUBCASE("profil di manifest berbeda dari profil kunci di store") {
-    s.m.algorithm = "ecdsa-p256";  // keyid milik kunci Ed25519
+    s.m.algorithm = "ecdsa-p256-sha256";  // keyid milik kunci Ed25519
     s.resign();
     expect(s.run(), Status::KeyNotTrusted);
   }
@@ -328,10 +328,12 @@ TEST_CASE("verify: INVALID_SIGNATURE") {
 TEST_CASE("verify: METADATA_MISMATCH") {
   Scenario s;
   SUBCASE("package berbeda") {
-    s.package = "lain";  // masukan pengguna; manifest tetap "demo"
+    // Kunci diizinkan untuk "lain" (paket yang diharapkan pengguna), tetapi manifest bilang "demo".
+    s.write_store({{s.signer, "demo"}, {s.signer, "lain"}});
+    s.package = "lain";
     auto r = s.run();
     expect(r, Status::MetadataMismatch);
-    CHECK(r.package == "demo");  // sudah terotentikasi
+    CHECK(r.package == "demo");  // dari manifest
   }
   SUBCASE("version berbeda") {
     s.version = "2.0.0";
@@ -424,19 +426,53 @@ TEST_CASE("verify: metadata salah + artefak berubah -> METADATA_MISMATCH") {
   Scenario s;
   s.content += "x";
   s.write_artifact();
+  s.write_store({{s.signer, "demo"}, {s.signer, "lain"}});
   s.package = "lain";
   expect(s.run(), Status::MetadataMismatch);
 }
 
-TEST_CASE("verify: kegagalan sebelum signature tidak membocorkan isi manifest") {
+TEST_CASE("verify: field Result (Tabel 2.9) kosong sebelum manifest terbaca, terisi sesudahnya") {
   Scenario s;
-  s.write_store({});
-  auto r = s.run();
-  expect(r, Status::KeyNotTrusted);
-  CHECK(r.keyid.empty());
-  CHECK(r.package.empty());
-  CHECK(r.version.empty());
-  CHECK(r.algorithm.empty());
+  SUBCASE("FORMAT_ERROR: belum terbaca -> kosong") {
+    spit(s.bundle(), "bukan json");
+    auto r = s.run();
+    expect(r, Status::FormatError);
+    CHECK(r.algorithm.empty());
+    CHECK(r.keyid.empty());
+    CHECK(r.package.empty());
+    CHECK(r.version.empty());
+  }
+  SUBCASE("INPUT_ERROR: kosong") {
+    fs::remove(s.file());
+    auto r = s.run();
+    expect(r, Status::InputError);
+    CHECK(r.keyid.empty());
+  }
+  SUBCASE("KEY_NOT_TRUSTED: manifest sudah terbaca -> terisi (hanya penjelasan)") {
+    s.write_store({});
+    auto r = s.run();
+    expect(r, Status::KeyNotTrusted);
+    CHECK(r.algorithm == "ed25519");
+    CHECK(r.keyid == s.signer->keyid);
+    CHECK(r.package == "demo");
+    CHECK(r.version == "1.0.0");
+  }
+  SUBCASE("INVALID_SIGNATURE: terisi") {
+    s.signature[0] ^= 1;
+    s.write_bundle();
+    auto r = s.run();
+    expect(r, Status::InvalidSignature);
+    CHECK(r.keyid == s.signer->keyid);
+    CHECK(r.package == "demo");
+  }
+}
+
+TEST_CASE("verify: kunci harus diizinkan untuk package yang diharapkan PENGGUNA") {
+  // Manifest dan tanda tangan sah untuk "demo", tetapi pengguna meminta "lain" dan kunci hanya
+  // diizinkan untuk "demo": ditolak di langkah 4, bukan lolos ke pemeriksaan metadata.
+  Scenario s;
+  s.package = "lain";
+  expect(s.run(), Status::KeyNotTrusted);
 }
 
 TEST_CASE("verify: bundle tidak bisa menambah trust (kunci hanya dari store)") {

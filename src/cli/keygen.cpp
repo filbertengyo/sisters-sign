@@ -11,15 +11,6 @@ namespace {
 
 namespace fs = std::filesystem;
 
-// Nama kanonik (sama dengan field `algorithm` di manifest) plus alias `ecdsa`.
-bool parse_algorithm(std::string_view s, crypto::Algorithm& out) {
-  if (s == "ecdsa") {
-    out = crypto::Algorithm::EcdsaP256;
-    return true;
-  }
-  return manifest::parse_algorithm_name(s, out);
-}
-
 int fail(Io io, const Error& e) {
   io.err << "error: " << e.message << "\n";
   return exit_code(e.status);
@@ -29,7 +20,7 @@ int fail(Io io, const Error& e) {
 
 int run_keygen(std::span<const std::string_view> args, Io io) {
   static constexpr Flag kFlags[] = {
-      {"algorithm", true, true, "algoritma kunci (rsa-pss | ecdsa | ed25519)"},
+      {"algorithm", true, true, "profil algoritma (rsa-pss-sha256 | ecdsa-p256-sha256 | ed25519)"},
       {"out", true, true, "prefix berkas keluaran (<prefix>.key.pem dan <prefix>.pub.pem)"},
       {"force", false, false, "timpa berkas yang sudah ada"},
   };
@@ -38,10 +29,11 @@ int run_keygen(std::span<const std::string_view> args, Io io) {
     return *rc;
   }
 
+  // Nilai -algorithm = nama profil (Tabel 2.1), sama dengan field algorithm di manifest.
   crypto::Algorithm algorithm;
-  if (!parse_algorithm(parsed.value("algorithm"), algorithm)) {
-    io.err << "error: algoritma tidak dikenal: " << parsed.value("algorithm")
-           << " (pilihan: rsa-pss, ecdsa, ed25519)\n";
+  if (!manifest::parse_algorithm_name(parsed.value("algorithm"), algorithm)) {
+    io.err << "error: profil algoritma tidak dikenal: " << parsed.value("algorithm")
+           << " (pilihan: rsa-pss-sha256, ecdsa-p256-sha256, ed25519)\n";
     return 2;
   }
 

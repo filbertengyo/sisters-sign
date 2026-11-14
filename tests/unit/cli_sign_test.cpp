@@ -93,8 +93,8 @@ struct AlgCase {
   const char* name;
 };
 const AlgCase kAlgs[] = {{crypto::Algorithm::Ed25519, "ed25519"},
-                         {crypto::Algorithm::EcdsaP256, "ecdsa-p256"},
-                         {crypto::Algorithm::RsaPss, "rsa-pss"}};
+                         {crypto::Algorithm::EcdsaP256, "ecdsa-p256-sha256"},
+                         {crypto::Algorithm::RsaPss, "rsa-pss-sha256"}};
 
 // Tanda tangan dan baca kembali bundle-nya; kembalikan manifest + bundle mentah.
 struct Signed {
@@ -237,6 +237,13 @@ TEST_CASE("sign: kegagalan input -> exit 2 dan tidak ada bundle") {
     spit(d.file("caf\xC3\xA9.txt"), "x");
     CHECK(sign(d.file("a b.txt"), "demo", "1", d.file("key.pem")).code == 2);
     CHECK(sign(d.file("caf\xC3\xA9.txt"), "demo", "1", d.file("key.pem")).code == 2);
+    // Spek: artifact.name harus diawali huruf/angka dan maksimum 128 karakter.
+    spit(d.file(".hidden"), "x");
+    spit(d.file("-dash.txt"), "x");
+    spit(d.file(std::string(129, 'a')), "x");
+    CHECK(sign(d.file(".hidden"), "demo", "1", d.file("key.pem")).code == 2);
+    CHECK(sign(d.file("-dash.txt"), "demo", "1", d.file("key.pem")).code == 2);
+    CHECK(sign(d.file(std::string(129, 'a')), "demo", "1", d.file("key.pem")).code == 2);
   }
   CHECK_FALSE(fs::exists(out));
 }

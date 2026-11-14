@@ -7,8 +7,7 @@
 // "artifact":{"name":...,"size":...,"sha256":...}} tanpa spasi/newline, UTF-8 tanpa BOM, string
 // ASCII tanpa escape, angka desimal polos, maksimum 16 KiB.
 //
-// ASUMSI (cocokkan dengan spek, ubah hanya di sini dan validators.cpp): nilai schema, nama
-// algoritma, dan pola package/version/artifact.name.
+// Sesuai Tabel 2.1 dan 2.3 spek.
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -39,9 +38,10 @@ struct Manifest {
 
 // ---- validator field ---------------------------------------------------------------------------
 // package : ^[a-z0-9][a-z0-9._-]{0,63}$
-// version : ^[0-9A-Za-z][0-9A-Za-z._+-]{0,63}$
-// name    : ^[A-Za-z0-9._-]{1,255}$, bukan "." atau ".."
-// algorithm (token, bukan daftar profil): ^[a-z0-9][a-z0-9._-]{0,63}$
+// version : ^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$
+// name    : ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$
+// algorithm: spek tidak membatasi pola (nilai tak dikenal = UNSUPPORTED_ALGORITHM di verify);
+//            di sini cukup ASCII tercetak tanpa `"` dan `\`, maks 128 karakter.
 bool valid_package(std::string_view s);
 bool valid_version(std::string_view s);
 bool valid_artifact_name(std::string_view s);
@@ -49,7 +49,8 @@ bool valid_algorithm_token(std::string_view s);
 bool valid_hex64(std::string_view s);  // keyid dan sha256
 
 // ---- nama algoritma ----------------------------------------------------------------------------
-std::string_view algorithm_name(crypto::Algorithm a);  // "rsa-pss" / "ecdsa-p256" / "ed25519"
+std::string_view algorithm_name(
+    crypto::Algorithm a);  // "rsa-pss-sha256" / "ecdsa-p256-sha256" / "ed25519"
 bool parse_algorithm_name(std::string_view s, crypto::Algorithm& out);  // false bila tak dikenal
 
 // ---- serialize / parse -------------------------------------------------------------------------

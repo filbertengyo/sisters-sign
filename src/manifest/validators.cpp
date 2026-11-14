@@ -31,7 +31,8 @@ bool valid_version(std::string_view s) {
 }
 
 bool valid_artifact_name(std::string_view s) {
-  if (s.empty() || s.size() > 255 || s == "." || s == "..") return false;
+  if (s.empty() || s.size() > 128) return false;
+  if (!(is_lower(s[0]) || is_upper(s[0]) || is_digit(s[0]))) return false;
   for (char c : s) {
     if (!(is_lower(c) || is_upper(c) || is_digit(c) || c == '.' || c == '_' || c == '-')) {
       return false;
@@ -41,10 +42,11 @@ bool valid_artifact_name(std::string_view s) {
 }
 
 bool valid_algorithm_token(std::string_view s) {
-  if (s.empty() || s.size() > 64) return false;
-  if (!(is_lower(s[0]) || is_digit(s[0]))) return false;
+  // Spek tidak membatasi pola nilai algorithm; nilai tak dikenal harus sampai ke pemeriksaan
+  // UNSUPPORTED_ALGORITHM. Cukup ASCII tercetak yang tidak butuh escape JSON.
+  if (s.size() > 128) return false;
   for (char c : s) {
-    if (!(is_lower(c) || is_digit(c) || c == '.' || c == '_' || c == '-')) return false;
+    if (c < 0x20 || c > 0x7E || c == '"' || c == '\\') return false;
   }
   return true;
 }
@@ -60,9 +62,9 @@ bool valid_hex64(std::string_view s) {
 std::string_view algorithm_name(crypto::Algorithm a) {
   switch (a) {
     case crypto::Algorithm::RsaPss:
-      return "rsa-pss";
+      return "rsa-pss-sha256";
     case crypto::Algorithm::EcdsaP256:
-      return "ecdsa-p256";
+      return "ecdsa-p256-sha256";
     case crypto::Algorithm::Ed25519:
       return "ed25519";
   }
