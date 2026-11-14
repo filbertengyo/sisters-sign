@@ -126,15 +126,11 @@ TEST_CASE("cli: flag tidak dikenal di subcommand -> exit 2") {
 }
 
 TEST_CASE("cli: handler yang belum diisi mengembalikan 2, bukan sukses palsu") {
-  auto r =
-      run_cli({"sign", "-file", "a", "-package", "p", "-version", "1", "-key", "k", "-out", "o"});
+  // verify baru diisi di T20; selama masih stub harus gagal terang-terangan.
+  auto r = run_cli({"verify", "-file", "a", "-bundle", "b", "-trust-store", "t", "-package", "p",
+                    "-version", "1", "-json"});
   CHECK(r.code == 2);
   CHECK(r.err.find("belum diimplementasi") != std::string::npos);
-  CHECK(run_cli({"sign", "-file", "a", "-package", "p", "-version", "1", "-key", "k", "-out", "o"})
-            .code == 2);
-  CHECK(run_cli({"verify", "-file", "a", "-bundle", "b", "-trust-store", "t", "-package", "p",
-                 "-version", "1", "-json"})
-            .code == 2);
 }
 
 TEST_CASE("cli: trust butuh aksi yang dikenal") {
