@@ -1,1 +1,9 @@
-target_sources(core PRIVATE raii.cpp keys.cpp keyid.cpp ed25519.cpp ecdsa.cpp rsa_pss.cpp crypto.cpp)
+target_sources(core PRIVATE
+  raii.cpp
+  keys.cpp
+  keyio.cpp
+  keyid.cpp
+  ed25519.cpp
+  ecdsa.cpp
+  rsa_pss.cpp
+  crypto.cpp)
