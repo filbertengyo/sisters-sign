@@ -5,12 +5,14 @@
 #include <string>
 #include <vector>
 
+#include "util/bytes.hpp"
 #include "util/result.hpp"
 
 namespace sister_sign::crypto {
 
-using Bytes = std::vector<std::uint8_t>;
-using ByteView = std::span<const std::uint8_t>;
+// Tipe byte bersama ada di util/bytes.hpp.
+using sister_sign::Bytes;
+using sister_sign::ByteView;
 
 enum class Algorithm { RsaPss, EcdsaP256, Ed25519 };
 
