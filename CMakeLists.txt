@@ -41,7 +41,7 @@ add_library(core STATIC)
 target_include_directories(core PUBLIC ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(core PUBLIC OpenSSL::Crypto glaze::glaze PRIVATE project_options)
 
-foreach(comp util crypto manifest bundle trust cli)
+foreach(comp util crypto manifest bundle trust verify cli)
   add_subdirectory(src/${comp})
 endforeach()
 
@@ -69,7 +69,8 @@ add_executable(unit_tests
   tests/unit/cli_test.cpp
   tests/unit/cli_keygen_test.cpp
   tests/unit/cli_trust_test.cpp
-  tests/unit/cli_sign_test.cpp)
+  tests/unit/cli_sign_test.cpp
+  tests/unit/verify_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
