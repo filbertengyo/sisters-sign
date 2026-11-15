@@ -52,6 +52,50 @@ if docker run --rm --network none --user 0:0 -v "$src:/work:ro" --entrypoint /bi
   fail "mount :ro ternyata bisa ditulis"
 fi
 
+# Roundtrip fungsional (finalisasi T25 setelah T20). Pola mount sama dengan pipeline: input :ro,
+# hanya direktori output yang bisa ditulis, rootfs read-only, tanpa jaringan, uid pemanggil.
+# Kunci yang dipakai dibuat di sini (kunci test sementara) dan dihapus bersama $tmp.
+run_tool() {
+  docker run --rm --network none --user "$(id -u):$(id -g)" --read-only --cap-drop ALL \
+    --security-opt no-new-privileges "$@" </dev/null
+}
+hostp() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else printf '%s\n' "$1"; fi; }
+rt="$tmp/roundtrip"
+mkdir -p "$rt/keys" "$rt/out" "$rt/tampered"
+printf 'Probe\n' >"$rt/tampered/artifact.txt" # nama & ukuran sama, 1 byte beda: harus ditolak
+for alg in ed25519 ecdsa-p256-sha256 rsa-pss-sha256; do
+  echo "== roundtrip $alg: keygen -> trust add -> sign (input :ro) -> verify -json"
+  run_tool -v "$(hostp "$rt/keys"):/keys" "$img" keygen -algorithm "$alg" -out "/keys/$alg" >/dev/null ||
+    fail "keygen $alg gagal"
+  run_tool -v "$(hostp "$rt/keys"):/keys" "$img" trust add -store /keys/trust.json \
+    -key "/keys/$alg.pub.pem" -package probe >/dev/null || fail "trust add $alg gagal"
+  run_tool -v "$src:/work:ro" -v "$(hostp "$rt/keys"):/keys:ro" -v "$(hostp "$rt/out"):/out" "$img" \
+    sign -file /work/artifact.txt -package probe -version 1.0.0 -key "/keys/$alg.key.pem" \
+    -out "/out/$alg.bundle.json" >/dev/null || fail "sign $alg gagal"
+  set +e
+  json="$(run_tool -v "$src:/work:ro" -v "$(hostp "$rt/keys"):/keys:ro" -v "$(hostp "$rt/out"):/out:ro" \
+    "$img" verify -file /work/artifact.txt -bundle "/out/$alg.bundle.json" -trust-store /keys/trust.json \
+    -package probe -version 1.0.0 -json 2>/dev/null)"
+  rc=$?
+  set -e
+  echo "   exit=$rc $json"
+  [[ "$rc" -eq 0 && "$json" == '{"valid":true,"status":"OK",'*'"algorithm":"'"$alg"'"'* ]] ||
+    fail "verify $alg tidak OK"
+
+  echo "== roundtrip $alg: artefak diubah -> verify harus exit 1 (ARTIFACT_MISMATCH)"
+  set +e
+  json="$(run_tool -v "$(hostp "$rt/tampered"):/work:ro" -v "$(hostp "$rt/keys"):/keys:ro" \
+    -v "$(hostp "$rt/out"):/out:ro" "$img" verify -file /work/artifact.txt \
+    -bundle "/out/$alg.bundle.json" -trust-store /keys/trust.json -package probe -version 1.0.0 \
+    -json 2>/dev/null)"
+  rc=$?
+  set -e
+  echo "   exit=$rc $json"
+  [[ "$rc" -eq 1 && "$json" == '{"valid":false,"status":"ARTIFACT_MISMATCH",'* ]] ||
+    fail "verify $alg atas artefak yang diubah tidak ditolak dengan benar"
+done
+rm -rf "$rt"
+
 echo "== docker history tidak memuat kunci"
 if docker history --no-trunc "$img" | grep -Ei 'PRIVATE KEY|\.pem\b|\.key\b|\.p12\b|\.pfx\b'; then
   fail "docker history menyebut kunci"
