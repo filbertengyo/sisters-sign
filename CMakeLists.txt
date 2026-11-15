@@ -81,6 +81,10 @@ add_test(NAME cli_no_stdin
   COMMAND sh -c "$<TARGET_FILE:sister-sign> keygen < /dev/null > /dev/null 2>&1; test $? -eq 2")
 set_tests_properties(cli_no_stdin PROPERTIES TIMEOUT 10)
 
+# Alat bantu test e2e: membuat/memanipulasi bundle (bukan bagian dari produk).
+add_executable(forge tests/tools/forge.cpp)
+target_link_libraries(forge PRIVATE core project_options)
+
 # Harness e2e (tests/e2e): kasus contoh harus lulus, dan harness harus mendeteksi kasus gagal.
 add_test(NAME e2e_cases
   COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/run.sh $<TARGET_FILE:sister-sign>
@@ -95,7 +99,7 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/e2e-selftest)
 add_custom_target(e2e_report
   COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/run.sh $<TARGET_FILE:sister-sign>
           ${CMAKE_SOURCE_DIR}/tests/e2e/cases ${CMAKE_SOURCE_DIR}/tests/results
-  DEPENDS sister-sign
+  DEPENDS sister-sign forge
   USES_TERMINAL)
 
 # Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md

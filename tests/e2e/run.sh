@@ -45,8 +45,9 @@ extract_status() {
   printf '%s' "$s"
 }
 
-shopt -s nullglob
-for case_file in "$CASES"/*.sh; do
+# Semua berkas .sh di bawah direktori kasus (rekursif), urut nama; ID = nama berkas tanpa .sh.
+FORGE_BIN="$(dirname "$BIN")/forge"
+while IFS= read -r case_file; do
   id="$(basename "$case_file" .sh)"
   cdir="$RESULTS/$id"
   rm -rf "$cdir"
@@ -68,7 +69,7 @@ for case_file in "$CASES"/*.sh; do
 
   (
     set +e
-    export SIS="$BIN" CASE_OUT="$cdir"
+    export SIS="$BIN" FORGE="$FORGE_BIN" CASE_OUT="$cdir"
     cd "$work" || exit 98
     . "$HERE/lib.sh"
     . "$case_file"
@@ -78,7 +79,7 @@ for case_file in "$CASES"/*.sh; do
     fi
     run
     exit 0 # exit code run() = perintah terakhir; yang dinilai ada di last.rc
-  ) >"$cdir/harness.log" 2>&1
+  ) </dev/null >"$cdir/harness.log" 2>&1
   run_rc=$?
 
   # Bukti masukan: daftar + hash semua berkas kerja; salinan berkas kecil kecuali privkey.
@@ -147,6 +148,18 @@ for case_file in "$CASES"/*.sh; do
     fi
   fi
 
+  # Pemeriksaan tambahan (check_same/check_differs/check_eq di lib.sh): semuanya harus PASS.
+  if [ "$verdict" != "ERROR" ] && [ -s "$cdir/checks.txt" ]; then
+    checks_total="$(wc -l <"$cdir/checks.txt")"
+    checks_ok="$(grep -c '^PASS' "$cdir/checks.txt" || true)"
+    expected="$expected checks=$checks_total/$checks_total"
+    actual="$actual checks=$checks_ok/$checks_total"
+    if [ "$checks_ok" -ne "$checks_total" ]; then
+      [ "$verdict" = "PASS" ] && verdict="FAIL"
+      reasons="$reasons cek tambahan gagal: $(grep '^FAIL' "$cdir/checks.txt" | tr '\n' ';')"
+    fi
+  fi
+
   {
     echo "id: $id"
     echo "desc: ${DESC:-}"
@@ -174,7 +187,7 @@ for case_file in "$CASES"/*.sh; do
     fail=$((fail + 1))
     printf '%s  %s  %s\n' "$verdict" "$id" "$reasons"
   fi
-done
+done < <(find "$CASES" -name '*.sh' | sort)
 
 bash "$HERE/make_table.sh" "$TSV" >"$RESULTS/results.md"
 printf '\n%d kasus: %d PASS, %d tidak lulus. Tabel: %s\n' "$total" "$pass" "$fail" "$RESULTS/results.md"
