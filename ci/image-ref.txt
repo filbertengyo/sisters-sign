@@ -1,0 +1,5 @@
+# Image sister-sign untuk release-pipeline.yml saat dijalankan manual (workflow_dispatch tanpa input).
+# WAJIB by digest (<repo>@sha256:<64 hex>); tag ditolak. Baris pertama yang bukan komentar dipakai.
+# Ganti dengan digest dari tabel versi <-> tag <-> digest (README / docs/container-image.md) setelah
+# rilis pertama. Placeholder di bawah sengaja tidak valid supaya pipeline gagal dengan pesan jelas.
+ghcr.io/filbertengyo/sisters-sign@sha256:BELUM-DIRILIS
