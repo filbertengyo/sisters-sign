@@ -112,5 +112,10 @@ add_executable(canonicalization_demo tests/attacks/canonicalization_demo.cpp)
 target_link_libraries(canonicalization_demo PRIVATE core doctest::doctest glaze::glaze project_options)
 add_test(NAME canonicalization_demo COMMAND canonicalization_demo)
 
+# Rollback Attack Demo
+add_executable(rollback_demo tests/attacks/rollback_demo.cpp)
+target_link_libraries(rollback_demo PRIVATE project_options)
+add_test(NAME rollback_demo COMMAND rollback_demo)
+
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)
