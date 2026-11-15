@@ -4,7 +4,7 @@ Skenario U14 (Tabel 2.11): tandatangani manifest yang identik dua kali dengan ku
 bandingkan kedua tanda tangan, jelaskan hasilnya berdasarkan algoritma dan mekanisme randomness/nonce,
 dan pastikan kedua bundle berhasil diverifikasi.
 
-Kasus: `tests/e2e/cases/u01_u14/U14-{ed25519,ecdsa,rsa}-repeat-sign.sh`. Jalankan:
+Kasus: `tests/e2e/cases/sign-verify-roundtrip/U14-{ed25519,ecdsa,rsa}-repeat-sign.sh`. Jalankan:
 
 ```bash
 cmake --build build && bash tests/e2e/run.sh build/sister-sign tests/e2e/cases build/e2e-results

@@ -64,9 +64,9 @@ Kasus boleh diletakkan di subdirektori (runner mencari `*.sh` secara rekursif); 
 
 | Folder | Skenario |
 |---|---|
-| `cases/u01_u14/` | U01 (3 algoritma x teks/biner/kosong), U14 (3 algoritma, sign dua kali) |
-| `cases/u02_u09/` | U02-U09 (Ed25519) |
-| `cases/u10_u13/` | U10 (7 kondisi terpisah), U11 (2 nilai), U12, U13 (Ed25519) |
+| `cases/sign-verify-roundtrip/` | U01 (3 algoritma x teks/biner/kosong), U14 (3 algoritma, sign dua kali) |
+| `cases/tamper-and-trust/` | U02-U09 (Ed25519) |
+| `cases/strict-format-and-algorithm/` | U10 (7 kondisi terpisah), U11 (2 nilai), U12, U13 (Ed25519) |
 
 ## Hasil
 
