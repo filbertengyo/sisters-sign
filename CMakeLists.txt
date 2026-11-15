@@ -103,7 +103,7 @@ add_custom_target(e2e_report
   USES_TERMINAL)
 
 # Spike A
-add_executable(spike_a tests/spikes/glaze_spikes.cpp)
+add_executable(spike_a tests/spikes/glaze_spike.cpp)
 target_link_libraries(spike_a PRIVATE doctest::doctest glaze::glaze project_options)
 add_test(NAME spike_a COMMAND spike_a)
 

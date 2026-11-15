@@ -2,7 +2,7 @@
 Goal: Asessing how glaze handles duplicate keys (silently accepts or rejects outright). The results determine the design of the manifest parser and if a manual duplicate scanner is necessary.
 
 ## Testing Format
-Testing is done by parsing various test json strings with different configurations and into different target structs. The baseline json string used is `{"a":1,"a":2}` mapped to the struct `struct TestStructA { int a }` tested on different configurations of `error_on_missing_keys` and `error_on_unknown_keys`. The full test suite is available at `tests/spikes/glaze_spikes.cpp`.
+Testing is done by parsing various test json strings with different configurations and into different target structs. The baseline json string used is `{"a":1,"a":2}` mapped to the struct `struct TestStructA { int a }` tested on different configurations of `error_on_missing_keys` and `error_on_unknown_keys`. The full test suite is available at `tests/spikes/glaze_spike.cpp`.
 
 ## Results
 |json|struct|additional config|behaviour|
