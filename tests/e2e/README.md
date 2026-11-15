@@ -37,6 +37,37 @@ Helper (lihat `lib.sh`): `sis` (jalankan sister-sign, dicatat), `must` (persiapa
 `make_file`, `make_bytes`, `gen_key`, `trust_add`, `sign_ok`, `setup_signed`, `verify_std`.
 Hanya pemanggilan `sis` terakhir yang dinilai; panggilan persiapan bungkus dengan `must`.
 
+## Alat bantu untuk kasus yang memanipulasi bundle
+
+CLI `sign` selalu membangun manifest kanonik sendiri, jadi kasus yang butuh masukan rusak memakai
+`forge` (`tests/tools/forge.cpp`, di-build bersama proyek dan hanya untuk test; runner mencarinya di
+direktori yang sama dengan biner `sister-sign`):
+
+```bash
+forge sign-manifest <key.pem> <manifest-file> <out-bundle>   # tanda tangani byte berkas apa adanya
+forge extract-manifest  <bundle> <out>                       # byte manifest M
+forge extract-signature <bundle> <out>                       # byte signature
+forge replace-manifest  <bundle> <manifest-file> <out>       # ganti M, signature lama tetap
+forge flip-sig-bit      <bundle> <out> [bit]                 # balik satu bit signature
+forge reformat          <bundle> <out>                       # urutan field + whitespace berbeda
+```
+
+Helper tambahan di `lib.sh`: `forge`, `manifest_text`, `sha256_of`, `file_size`, `make_binary`,
+`make_empty`, dan pemeriksaan di luar perintah yang dinilai: `check_same A B desk`,
+`check_differs A B desk`, `check_eq X Y desk`. Semua `check_*` harus PASS; hasilnya masuk
+`checks.txt` dan tampil di tabel sebagai `checks=ok/total`. `gen_key` menyimpan keyid terakhir di
+`$KEYID`.
+
+Kasus boleh diletakkan di subdirektori (runner mencari `*.sh` secara rekursif); ID = nama berkas.
+
+## Cakupan skenario spek (Tabel 2.11)
+
+| Folder | Skenario |
+|---|---|
+| `cases/u01_u14/` | U01 (3 algoritma x teks/biner/kosong), U14 (3 algoritma, sign dua kali) |
+| `cases/u02_u09/` | U02-U09 (Ed25519) |
+| `cases/u10_u13/` | U10 (7 kondisi terpisah), U11 (2 nilai), U12, U13 (Ed25519) |
+
 ## Hasil
 
 Per kasus di `<hasil>/<ID>/`: `commands.txt` (semua perintah), `expected.txt`, `actual.txt`,

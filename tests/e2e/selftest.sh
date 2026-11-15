@@ -20,6 +20,7 @@ verdict_of() { awk -F '\t' -v id="$1" '$1 == id { print $6 }' "$tsv"; }
 check "P01 terdeteksi PASS" "$([ "$(verdict_of P01-should-pass)" = PASS ] && echo 0 || echo 1)"
 check "F01 (exit salah) terdeteksi FAIL" "$([ "$(verdict_of F01-wrong-exit)" = FAIL ] && echo 0 || echo 1)"
 check "F02 (status salah) terdeteksi FAIL" "$([ "$(verdict_of F02-wrong-status)" = FAIL ] && echo 0 || echo 1)"
+check "F04 (pemeriksaan tambahan gagal) terdeteksi FAIL" "$([ "$(verdict_of F04-check-fails)" = FAIL ] && echo 0 || echo 1)"
 check "F03 (persiapan gagal) terdeteksi ERROR" "$([ "$(verdict_of F03-setup-fails)" = ERROR ] && echo 0 || echo 1)"
 check "tabel markdown dibuat" "$(grep -q '^| ID |' "$OUT/selftest/results.md" && echo 0 || echo 1)"
 check "bukti per kasus tersimpan" "$([ -f "$OUT/selftest/P01-should-pass/commands.txt" ] && [ -f "$OUT/selftest/P01-should-pass/expected.txt" ] && [ -f "$OUT/selftest/P01-should-pass/actual.txt" ] && [ -f "$OUT/selftest/P01-should-pass/stdout.txt" ] && echo 0 || echo 1)"
