@@ -102,6 +102,11 @@ add_custom_target(e2e_report
   DEPENDS sister-sign forge
   USES_TERMINAL)
 
+# Spike A
+add_executable(spike_a tests/spikes/glaze_spikes.cpp)
+target_link_libraries(spike_a PRIVATE doctest::doctest glaze::glaze project_options)
+add_test(NAME spike_a COMMAND spike_a)
+
 # Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md
 add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
 target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
