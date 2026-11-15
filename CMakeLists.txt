@@ -107,5 +107,10 @@ add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
 target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
 add_test(NAME spike_c COMMAND spike_c)
 
+# Canonicalization Confusion Attack Demo
+add_executable(canonicalization_demo tests/attacks/canonicalization_demo.cpp)
+target_link_libraries(canonicalization_demo PRIVATE core doctest::doctest glaze::glaze project_options)
+add_test(NAME canonicalization_demo COMMAND canonicalization_demo)
+
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)
