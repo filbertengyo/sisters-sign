@@ -19,6 +19,9 @@ if(SISTER_SIGN_SANITIZE)
   target_link_options(project_options INTERFACE -fsanitize=address,undefined)
 endif()
 
+# Python3
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 # OpenSSL >= 3.5: sama dengan image (Debian trixie) dan CI.
 # <3.5 streaming Ed25519 crash dan default salt RSA-PSS berbeda.
 find_package(OpenSSL 3.5 REQUIRED)
