@@ -1,4 +1,4 @@
-// Fungsi statistik benchmark (T29): median dan persentil nearest-rank.
+// Fungsi statistik benchmark: median dan persentil nearest-rank.
 #include <doctest/doctest.h>
 
 #include <cstdint>

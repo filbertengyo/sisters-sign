@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cek image sister-sign (T25). Dipakai .github/workflows/build-image.yml; bisa juga lokal.
+# Cek image sister-sign. Dipakai .github/workflows/build-image.yml; bisa juga lokal.
 #
 #   bash ci/check-image.sh <image-ref> [expected-version]
 #
@@ -52,7 +52,7 @@ if docker run --rm --network none --user 0:0 -v "$src:/work:ro" --entrypoint /bi
   fail "mount :ro ternyata bisa ditulis"
 fi
 
-# Roundtrip fungsional (finalisasi T25 setelah T20). Pola mount sama dengan pipeline: input :ro,
+# Roundtrip fungsional. Pola mount sama dengan pipeline: input :ro,
 # hanya direktori output yang bisa ditulis, rootfs read-only, tanpa jaringan, uid pemanggil.
 # Kunci yang dipakai dibuat di sini (kunci test sementara) dan dihapus bersama $tmp.
 run_tool() {

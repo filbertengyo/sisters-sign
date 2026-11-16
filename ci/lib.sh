@@ -1,4 +1,4 @@
-# Helper bersama skrip pipeline (T26). Di-source, jangan dijalankan langsung.
+# Helper bersama skrip pipeline. Di-source, jangan dijalankan langsung.
 #
 # Semua pemanggilan image lewat tool_run: tanpa jaringan, uid/gid pemanggil, rootfs read-only,
 # tanpa capability, tanpa TTY, stdin ditutup. Input selalu di-mount :ro; hanya direktori output

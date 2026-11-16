@@ -30,10 +30,10 @@ Implementasi: `src/crypto/ecdsa.cpp`; bukti: `tests/unit/crypto_ecdsa_test.cpp`.
 - Panjang DER bervariasi di antara signature-signature itu (test memastikan ada lebih dari satu
   panjang berbeda), sedangkan `r‖s` selalu 64 byte.
 - Cek silang: signature kita dikonversi balik ke DER lalu lolos `openssl dgst -sha256 -verify`
-  (dilewati otomatis bila CLI `openssl` tidak ada; dicakup lagi di interop T28).
+  (dilewati otomatis bila CLI `openssl` tidak ada; dicakup lagi di uji interop, docs/interop.md).
 
 ## Nonce
 
 `ecdsa_sign` memakai parameter `nonce-type=1` (RFC 6979, OpenSSL >= 3.2), jadi pesan sama ->
 signature identik. Tanpa parameter ini OpenSSL memakai nonce acak (signature berbeda tiap kali).
-Ini yang dipakai analisis U14 dan demo nonce reuse (T30).
+Ini yang dipakai analisis U14 dan demo nonce reuse.

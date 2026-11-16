@@ -1,4 +1,4 @@
-# tests/integration: uji integrasi CI/CD C01-C05 (T27)
+# tests/integration: uji integrasi CI/CD C01-C05
 
 Bukti bahwa image rilis bisa dipakai di runner bersih dan bahwa **keputusan verify menentukan
 apakah deploy jalan** (spek Bagian 2.9, Tabel 2.15). Semua perintah jalan di container image

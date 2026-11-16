@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tahap Verify (T26): `sister-sign verify -json` di container, TANPA privkey. Trust store harus
+# Tahap Verify: `sister-sign verify -json` di container, TANPA privkey. Trust store harus
 # berasal dari sumber tepercaya (berkas di repo/runner), bukan dari bundle atau artefak yang sedang
 # diverifikasi.
 #

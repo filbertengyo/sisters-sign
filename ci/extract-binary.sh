@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Artefak rilis untuk pipeline contoh (T26): binary sister-sign itu sendiri, diambil dari image
+# Artefak rilis untuk pipeline contoh: binary sister-sign itu sendiri, diambil dari image
 # yang sudah di-pull by digest. Jadi yang ditandatangani persis binary yang dirilis.
 #
 #   bash ci/extract-binary.sh <repo>@sha256:<digest> <dir-output>

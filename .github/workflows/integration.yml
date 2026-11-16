@@ -1,6 +1,6 @@
 name: integration
 
-# Uji integrasi CI/CD C01-C05 (T27, spek Bagian 2.9 / Tabel 2.15) terhadap image rilis BY DIGEST
+# Uji integrasi CI/CD C01-C05 (spek Bagian 2.9 / Tabel 2.15) terhadap image rilis BY DIGEST
 # dari registry. Program tidak di-build dari source: semua perintah jalan di container image itu.
 #
 #   C01  sign + verify + deploy (berkas penanda) x3 algoritma

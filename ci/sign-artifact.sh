@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Tahap Sign (T26). Privkey HANYA dari variabel lingkungan SIGNING_KEY (CI secret), ditulis ke
+# Tahap Sign. Privkey HANYA dari variabel lingkungan SIGNING_KEY (CI secret), ditulis ke
 # temp file 0600 di luar workspace, di-mount :ro ke container, lalu dihapus. Isi kunci tidak
 # pernah dicetak, tidak masuk image, dan tidak masuk direktori output.
 #
 #   SIGNING_KEY="$(cat k.key.pem)" bash ci/sign-artifact.sh <image@digest> <artefak> <package> \
 #       <versi> <bundle-output> [<sbom> <bundle-sbom-output>]
 #
-# Dengan <sbom> (T37), SBOM ikut ditandatangani (`sbom sign`) memakai temp file kunci yang sama
+# Dengan <sbom>, SBOM ikut ditandatangani (`sbom sign`) memakai temp file kunci yang sama
 # dalam satu sesi, lalu kunci dihapus sekali.
 set -euo pipefail
 # shellcheck source=ci/lib.sh

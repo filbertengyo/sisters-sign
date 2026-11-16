@@ -1,6 +1,9 @@
 #pragma once
-// RAII untuk objek OpenSSL + buffer rahasia (T06). Semua alokasi/pembebasan OpenSSL di kode
-// produksi wajib lewat tipe di sini; jangan memanggil `*_free` manual.
+/// @file
+/// @brief RAII untuk objek OpenSSL + buffer rahasia.
+///
+/// Semua alokasi/pembebasan OpenSSL di kode produksi wajib lewat tipe di sini; jangan memanggil
+/// `*_free` manual.
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
@@ -37,6 +40,7 @@ struct BioDeleter {
   void operator()(BIO* p) const noexcept { BIO_free_all(p); }
 };
 
+/// @brief `EVP_PKEY` milik sendiri (kunci OpenSSL).
 using EvpPkey = std::unique_ptr<EVP_PKEY, EvpPkeyDeleter>;
 using EvpPkeyCtx = std::unique_ptr<EVP_PKEY_CTX, EvpPkeyCtxDeleter>;
 using EvpMdCtx = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
@@ -57,10 +61,15 @@ inline Bignum make_bignum() { return Bignum(BN_new()); }
 inline Bio make_mem_bio() { return Bio(BIO_new(BIO_s_mem())); }
 
 // ---- buffer rahasia ----------------------------------------------------------------------------
-// Hapus isi memori dengan OPENSSL_cleanse (tidak dioptimasi hilang oleh compiler).
+/// @brief Hapus isi memori dengan OPENSSL_cleanse (tidak dioptimasi hilang oleh compiler).
+/// @param data awal memori
+/// @param size jumlah byte
 void secure_cleanse(void* data, std::size_t size) noexcept;
 
-// Buffer ukuran tetap yang dibersihkan sebelum dibebaskan. Allocator hanya untuk pengujian.
+/// @brief Buffer ukuran tetap yang dibersihkan sebelum dibebaskan (untuk PEM privkey dll.).
+///
+/// Hanya bisa dipindah (move); objek asal dikosongkan.
+/// @tparam Alloc allocator, hanya diganti untuk pengujian
 template <class Alloc = std::allocator<std::uint8_t>>
 class BasicSecureBuffer {
  public:
@@ -92,18 +101,21 @@ class BasicSecureBuffer {
   std::span<std::uint8_t> span() noexcept { return {data_.data(), data_.size()}; }
   std::span<const std::uint8_t> span() const noexcept { return {data_.data(), data_.size()}; }
 
-  // Nolkan isi (ukuran tetap).
+  /// @brief Nolkan isi (ukuran tetap).
   void wipe() noexcept { secure_cleanse(data_.data(), data_.size()); }
 
  private:
   std::vector<std::uint8_t, Alloc> data_;
 };
 
+/// @brief SecureBuffer dengan allocator standar.
 using SecureBuffer = BasicSecureBuffer<>;
 
 // ---- error OpenSSL -----------------------------------------------------------------------------
-// Ambil dan kosongkan antrean error OpenSSL jadi satu baris ("lib:reason; ..."). Hanya memuat kode
-// error baku; teks data tambahan OpenSSL sengaja dibuang supaya tidak membawa isi kunci.
+/// @brief Ambil dan kosongkan antrean error OpenSSL jadi satu baris (`"lib:reason; ..."`).
+///
+/// Hanya memuat kode error baku; teks data tambahan OpenSSL sengaja dibuang supaya tidak membawa
+/// isi kunci.
 std::string openssl_error();
 
 }  // namespace sister_sign::crypto

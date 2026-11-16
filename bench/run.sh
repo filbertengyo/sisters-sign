@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Jalankan benchmark (T29) dua kali dan bandingkan. Build Release.
+# Jalankan benchmark dua kali dan bandingkan. Build Release.
 #
 #   bash bench/run.sh [dir-hasil]                 # default bench/results
 #   BENCH_IN_DOCKER=1 bash bench/run.sh           # build + jalan di container debian:trixie

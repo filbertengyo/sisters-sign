@@ -1,13 +1,13 @@
 name: build-image
 
-# Image container sister-sign (T25).
+# Image container sister-sign.
 #   tag v*            -> build linux/amd64 dari source, push ke ghcr.io/<owner>/<repo>, catat
 #                        digest, lalu cek pull ANONIM by digest (package harus PUBLIK).
 #   pull_request      -> build + cek image saja (tanpa login, tanpa push) bila build berubah.
 #   workflow_dispatch -> sama dengan PR; push hanya bila dijalankan pada ref tag v*.
 # Cek image ada di ci/check-image.sh (bisa dijalankan lokal).
-# Setelah push + pull anonim lulus, tag v* juga menjalankan release-pipeline.yml (T26) terhadap
-# digest yang baru, lalu membuat draft GitHub Release (T36).
+# Setelah push + pull anonim lulus, tag v* juga menjalankan release-pipeline.yml terhadap
+# digest yang baru, lalu membuat draft GitHub Release.
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
     name: build + check image (no push)
     if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-24.04
-    # Registry lokal: supaya uji pipeline (T26) bisa merujuk image BY DIGEST tanpa push ke GHCR.
+    # Registry lokal: supaya uji pipeline bisa merujuk image BY DIGEST tanpa push ke GHCR.
     services:
       registry:
         image: registry:2
@@ -68,7 +68,7 @@ jobs:
         run: bash ci/check-image.sh sister-sign:ci
       - name: Uji pipeline (sah -> deploy; artefak diubah -> verify gagal, tanpa deploy)
         run: bash ci/test-pipeline.sh sister-sign:ci localhost:5000
-      # T27: skenario C01-C05 dengan kunci sementara (bukti resmi = integration.yml pada image rilis).
+      # Skenario C01-C05 dengan kunci sementara (bukti resmi = integration.yml pada image rilis).
       - name: Uji integrasi C01-C05 (selftest, kunci sementara)
         run: bash tests/integration/selftest.sh sister-sign:ci localhost:5000
 
@@ -179,8 +179,8 @@ jobs:
       - name: Jalan tanpa jaringan
         run: docker run --rm --network none "$REF" -version
 
-  # T26: pipeline pemakai (sign -> verify -> deploy) dengan image yang baru di-push, by digest.
-  # Bila semuanya lulus, draft GitHub Release dibuat dari artefak yang sudah diverifikasi (T36).
+  # Pipeline pemakai (sign -> verify -> deploy) dengan image yang baru di-push, by digest.
+  # Bila semuanya lulus, draft GitHub Release dibuat dari artefak yang sudah diverifikasi.
   release-pipeline:
     name: release pipeline
     needs: [publish, verify-public]
@@ -193,7 +193,7 @@ jobs:
       release_tag: ${{ github.ref_name }}
     secrets: inherit
 
-  # T27: bukti C01-C05 pada image yang sama (terpisah dari rilis; tidak memblokir release-pipeline).
+  # Bukti C01-C05 pada image yang sama (terpisah dari rilis; tidak memblokir release-pipeline).
   integration:
     name: integration C01-C05
     needs: [publish, verify-public]

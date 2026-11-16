@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SBOM CycloneDX 1.6 untuk artefak rilis (T37): metadata.component = binary sister-sign beserta
+# SBOM CycloneDX 1.6 untuk artefak rilis: metadata.component = binary sister-sign beserta
 # SHA-256-nya; components = pustaka runtime di image (versi dari dpkg di dalam image) dan glaze
 # (header-only, terkompilasi ke dalam binary). Ditandatangani dengan `sister-sign sbom sign`.
 #

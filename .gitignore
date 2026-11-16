@@ -11,7 +11,7 @@ tests/results/*
 !tests/results/results.md
 *.key.pem
 !tests/fixtures/**/*.key.pem
-# Privkey demo pipeline (ci/) hanya ada di GitHub secret, tidak di repo (T26).
+# Privkey demo pipeline (ci/) hanya ada di GitHub secret, tidak di repo.
 # Laporan LaTeX: keluaran build
 # Benchmark: hasil run lokal ad hoc (hasil resmi di bench/results/ di-commit)
 bench/out/

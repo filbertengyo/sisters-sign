@@ -1,4 +1,4 @@
-# Rilis v0.1.0 dan pengumpulan (T36)
+# Rilis v0.1.0 dan pengumpulan
 
 Pemegang rilis: C (Cola1000). Deadline: **Senin 16 Nov 2026, 23.59 WIB**.
 
@@ -6,7 +6,7 @@ Pemegang rilis: C (Cola1000). Deadline: **Senin 16 Nov 2026, 23.59 WIB**.
 
 ```mermaid
 flowchart LR
-  A["semua PR merge ke main<br/>(T27, T28, T30, T31, T34 ...)"] --> B["laporan PDF final<br/>laporan/NIM1_NIM2_NIM3_Tugas3_IF4020.pdf"]
+  A["semua PR merge ke main"] --> B["laporan PDF final<br/>laporan/NIM1_NIM2_NIM3_Tugas3_IF4020.pdf"]
   B --> C["bash ci/release-check.sh v0.1.0"]
   C --> D["git tag v0.1.0 + push"]
   D --> E["build-image: push GHCR<br/>+ pull anonim by digest"]

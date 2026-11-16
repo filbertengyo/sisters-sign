@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tahap Deploy (T26): "deploy" = salin artefak yang SUDAH diverifikasi + bundle ke direktori
+# Tahap Deploy: "deploy" = salin artefak yang SUDAH diverifikasi + bundle ke direktori
 # deploy dan tulis berkas penanda DEPLOYED. Dipanggil hanya setelah semua verify lulus
 # (`needs: verify` di workflow; urutan yang sama di ci/pipeline-local.sh).
 #

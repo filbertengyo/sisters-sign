@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pemeriksaan sebelum rilis (T36). Jalankan dari root repo:
+# Pemeriksaan sebelum rilis. Jalankan dari root repo:
 #
 #   bash ci/release-check.sh v0.1.0
 #

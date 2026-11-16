@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Audit (T26): pastikan direktori (artefak run, log job, isi image yang diekspor) tidak memuat
+# Audit: pastikan direktori (artefak run, log job, isi image yang diekspor) tidak memuat
 # privkey: tidak ada blok PEM privkey dan tidak ada berkas berekstensi kunci privat.
 #
 #   bash ci/audit-no-privkey.sh <dir>...

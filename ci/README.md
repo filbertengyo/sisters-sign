@@ -1,4 +1,4 @@
-# ci/: pipeline contoh pemakai image (T26)
+# ci/: pipeline contoh pemakai image
 
 [`release-pipeline.yml`](../.github/workflows/release-pipeline.yml) memakai image `sister-sign` sebagai kakas (tanpa build dari source) untuk menandatangani dan memverifikasi artefak rilis, lalu memblokir deploy kalau verify gagal.
 
@@ -14,7 +14,7 @@ flowchart LR
 
 | Tahap | Job | Skrip | Aturan |
 |---|---|---|---|
-| Persiapan | `prepare` | [`resolve-image.sh`](resolve-image.sh), [`extract-binary.sh`](extract-binary.sh), [`make-sbom.sh`](make-sbom.sh) | image wajib `<repo>@sha256:<digest>`; tag ditolak; digest hasil pull dicocokkan; SBOM CycloneDX memuat SHA-256 binary (T37) |
+| Persiapan | `prepare` | [`resolve-image.sh`](resolve-image.sh), [`extract-binary.sh`](extract-binary.sh), [`make-sbom.sh`](make-sbom.sh) | image wajib `<repo>@sha256:<digest>`; tag ditolak; digest hasil pull dicocokkan; SBOM CycloneDX memuat SHA-256 binary |
 | Sign | `sign` (matrix 3 profil) | [`sign-artifact.sh`](sign-artifact.sh) | privkey hanya dari env `SIGNING_KEY` (secret), ditulis ke temp file `0600` di `$RUNNER_TEMP`, di-mount `:ro`, ditimpa nol lalu dihapus; artefak (`sign`) dan SBOM (`sbom sign`) dalam satu sesi kunci; output dicek tidak memuat privkey |
 | Verify | `verify` (matrix 3 profil) | [`verify-artifact.sh`](verify-artifact.sh), [`verify-sbom.sh`](verify-sbom.sh) | `verify -json`, `sbom verify -json`, `sbom check -json`; trust store = `ci/trust-store.json` dari checkout (bukan dari bundle/artefak); exit code asli yang menentukan |
 | Deploy | `deploy` (`needs: verify`) | [`deploy-marker.sh`](deploy-marker.sh) | sha256 artefak harus sama dengan yang diverifikasi; tiap hasil verify harus exit 0 + `OK`; tulis `DEPLOYED` |
@@ -98,7 +98,7 @@ Penolakan lain yang sudah dicoba: image by tag (`localhost:5000/sister-sign:test
 | `trust-store.json` | trust store demo (`minisign-trust/v1`), 3 kunci untuk package `sister-sign` |
 | `keys/*.pub.pem` | pubkey demo (SPKI PEM) |
 | `image-ref.txt` | image by digest untuk run manual |
-| `check-image.sh` | cek image T25 (dipakai `build-image.yml`) |
+| `check-image.sh` | cek image (dipakai `build-image.yml`) |
 | `lib.sh` | helper bersama (`tool_run`, `json_step`, `require_digest_ref`, `host_path`) |
 | `release-check.sh` | pemeriksaan sebelum tag (privkey di seluruh histori git, versi, laporan); lihat `docs/release.md` |
 

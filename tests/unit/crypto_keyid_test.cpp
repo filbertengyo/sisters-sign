@@ -106,7 +106,7 @@ TEST_CASE("different keys have different keyids") {
 TEST_CASE("keyid matches `openssl pkey -pubin -outform DER | sha256sum`") {
   if (std::system("openssl version > /dev/null 2>&1") != 0 ||
       std::system("sha256sum --version > /dev/null 2>&1") != 0) {
-    MESSAGE("openssl/sha256sum tidak ada; cek silang dilewati (dicakup T28 interop)");
+    MESSAGE("openssl/sha256sum tidak ada; cek silang dilewati (dicakup uji interop)");
     return;
   }
   namespace fs = std::filesystem;

@@ -1,6 +1,6 @@
-# Image container sister-sign (T25)
+# Image container sister-sign
 
-Image berisi binary `sister-sign` saja, dipakai pipeline (T26) sebagai kakas tanpa build dari source.
+Image berisi binary `sister-sign` saja, dipakai pipeline sebagai kakas tanpa build dari source.
 
 - [`Dockerfile`](../Dockerfile): multi-stage.
   - **build**: `debian:trixie` + `g++-14` (14.2) + CMake 3.31.6 + `libssl-dev` (**OpenSSL 3.5.7**), semua dari apt Debian. Build Release.
@@ -9,7 +9,7 @@ Image berisi binary `sister-sign` saja, dipakai pipeline (T26) sebagai kakas tan
 - [`.dockerignore`](../.dockerignore): allowlist (`CMakeLists.txt`, `include/`, `src/`, `tests/`, `bench/`). `tests/fixtures/` dan semua `*.pem`/`*.key`/`*.der`/`*.p8`/`*.p12`/`*.pfx` dikecualikan, jadi kunci tidak pernah masuk build context.
 - [`.github/workflows/build-image.yml`](../.github/workflows/build-image.yml): push tag `v*` memicu build `linux/amd64`, push ke GHCR, pencatatan digest, lalu pull anonim by digest. Di PR yang mengubah build, image hanya di-build dan dicek (tanpa push).
 - [`ci/check-image.sh`](../ci/check-image.sh): cek yang sama untuk CI dan lokal, termasuk roundtrip fungsional `keygen → trust add → sign → verify -json` untuk ketiga profil.
-- Pemakai image: [`release-pipeline.yml`](../.github/workflows/release-pipeline.yml) (T26), lihat [`ci/README.md`](../ci/README.md).
+- Pemakai image: [`release-pipeline.yml`](../.github/workflows/release-pipeline.yml), lihat [`ci/README.md`](../ci/README.md).
 
 ## Build & jalankan lokal
 
@@ -21,15 +21,15 @@ docker run --rm sister-sign:dev -version            # -> sister-sign 0.1.0
 docker run --rm --network none --user "$(id -u):$(id -g)" \
   -v "$PWD:/work:ro" sister-sign:dev -version
 
-# semua cek T25 (exit != 0 kalau ada yang gagal)
+# semua cek image (exit != 0 kalau ada yang gagal)
 bash ci/check-image.sh sister-sign:dev 0.1.0
 ```
 
-Output yang ditulis (`sign -out`, `trust add`) butuh mount kedua yang **tidak** `:ro`, misalnya `-v "$PWD/out:/out"`. Privkey jangan pernah di-`COPY` ke image. Mount saat runtime saja (lihat T26).
+Output yang ditulis (`sign -out`, `trust add`) butuh mount kedua yang **tidak** `:ro`, misalnya `-v "$PWD/out:/out"`. Privkey jangan pernah di-`COPY` ke image. Mount saat runtime saja (lihat [`ci/README.md`](../ci/README.md)).
 
 ## Hasil cek lokal (15 Nov 2026, Docker 28.5.1, linux/amd64)
 
-Dijalankan dengan `bash ci/check-image.sh sister-sign:dev 0.1.0` (exit 0) pada image hasil `docker build` dari `main` (`3bf4ae0`) ditambah perubahan T25/T26/T29/T37 yang belum di-commit.
+Dijalankan dengan `bash ci/check-image.sh sister-sign:dev 0.1.0` (exit 0) pada image hasil `docker build` dari `main` (`3bf4ae0`) ditambah perubahan yang belum di-commit.
 
 | Cek | Hasil |
 |---|---|
@@ -51,7 +51,7 @@ Lapisan image (`docker history`): base `debian:trixie-slim` 87.7 MB, `apt-get in
 
 `ci/check-image.sh` juga sudah diuji negatif. Ia gagal (exit 1) untuk image yang berisi PEM key dengan nama berkas samaran, yang `COPY *.pem`, dan yang jalan sebagai root.
 
-Selain itu `ci/test-pipeline.sh` (T26) memakai image yang sama lewat registry lokal, jadi jalur *pull by digest → sign → verify → deploy* juga teruji di setiap PR yang menyentuh build atau `ci/`.
+Selain itu `ci/test-pipeline.sh` memakai image yang sama lewat registry lokal, jadi jalur *pull by digest → sign → verify → deploy* juga teruji di setiap PR yang menyentuh build atau `ci/`.
 
 ## Rilis ke GHCR
 
@@ -73,7 +73,7 @@ docker image inspect --format '{{join .RepoDigests "\n"}}' ghcr.io/filbertengyo/
 # harus memuat ghcr.io/filbertengyo/sisters-sign@sha256:<digest> yang sama
 ```
 
-Pipeline (T26) WAJIB pull **by digest**, bukan by tag (`ci/resolve-image.sh` menolak tag):
+Pipeline WAJIB pull **by digest**, bukan by tag (`ci/resolve-image.sh` menolak tag):
 
 ```sh
 docker pull ghcr.io/filbertengyo/sisters-sign@sha256:<digest>
@@ -90,7 +90,7 @@ Digest build lokal tidak dicatat di sini karena build tidak bit-reproducible (ti
 ## Catatan
 
 - **OpenSSL 3.5 di semua tempat**: image (trixie, 3.5.7), CI (`ci.yml` job build/sanitizer jalan di container `debian:trixie`), dan `find_package(OpenSSL 3.5 REQUIRED)` di `CMakeLists.txt`. Konsekuensinya:
-  - ECDSA deterministik (RFC 6979, butuh OpenSSL ≥ 3.2) tersedia di image maupun CI. Ini relevan untuk U14 (T22) dan asumsi #5 di rencana kerja.
+  - ECDSA deterministik (RFC 6979, butuh OpenSSL ≥ 3.2) tersedia di image maupun CI. Ini relevan untuk U14 dan asumsi #5 di rencana kerja.
   - Configure gagal di OpenSSL < 3.5 dengan pesan `Found unsuitable version "3.0.13", but required is at least "3.5"`. Ubuntu 24.04 (termasuk WSL default) masih 3.0.13, jadi build lokal harus di Debian trixie atau di container (`docker run -v "$PWD:/src" debian:trixie ...`).
   - Tetap pakai one-shot untuk Ed25519 dan set salt RSA-PSS secara eksplisit (lihat [spike-c](spike-c.md)).
-- Privkey tidak pernah masuk build context (`.dockerignore`), layer, maupun filesystem image. Di pipeline, privkey hanya di-mount `:ro` saat `sign` dari temp file di runner, lalu dihapus (T26).
+- Privkey tidak pernah masuk build context (`.dockerignore`), layer, maupun filesystem image. Di pipeline, privkey hanya di-mount `:ro` saat `sign` dari temp file di runner, lalu dihapus.

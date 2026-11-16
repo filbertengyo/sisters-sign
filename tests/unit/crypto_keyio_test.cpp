@@ -296,7 +296,7 @@ TEST_CASE("RSA 3072 key files roundtrip and sign") {
 
 TEST_CASE("keygen output is readable by the openssl CLI") {
   if (std::system("openssl version > /dev/null 2>&1") != 0) {
-    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup T28 interop)");
+    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup uji interop)");
     return;
   }
   const fs::path dir = temp_dir("sister_sign_keyio_cli");

@@ -1,4 +1,4 @@
-"""T28 interop: sister-sign <-> an independent implementation (Python `cryptography`, openssl CLI).
+"""Interop: sister-sign <-> an independent implementation (Python `cryptography`, openssl CLI).
 
 usage: python -m interop.main <path/to/sister-sign> [out-dir]     (run from tests/)
 

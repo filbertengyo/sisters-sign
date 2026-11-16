@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Uji integrasi CI/CD C01-C05 (T27, spek Bagian 2.9 / Tabel 2.15) terhadap image rilis BY DIGEST.
+# Uji integrasi CI/CD C01-C05 (spek Bagian 2.9 / Tabel 2.15) terhadap image rilis BY DIGEST.
 # Program tidak dipasang dari source: semua sign/verify/trust jalan di container image itu, lewat
 # skrip pipeline yang sama dengan release-pipeline.yml (ci/*.sh).
 #
