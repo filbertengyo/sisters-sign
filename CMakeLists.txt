@@ -110,5 +110,8 @@ add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
 target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
 add_test(NAME spike_c COMMAND spike_c)
 
+# Nonce Reuse Attack Demo
+add_test(NAME nonce_reuse COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/attacks/nonce_reuse.py)
+
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)
