@@ -136,6 +136,17 @@ add_executable(rollback_demo tests/attacks/rollback_demo.cpp)
 target_link_libraries(rollback_demo PRIVATE project_options)
 add_test(NAME rollback_demo COMMAND rollback_demo)
 
+# Contoh di dokumentasi API (T38, docs/api): dijalankan supaya contoh yang ditampilkan selalu benar.
+add_executable(api_example_sign_verify docs/api/examples/sign_verify.cpp)
+target_link_libraries(api_example_sign_verify PRIVATE core project_options)
+add_test(NAME api_example_sign_verify
+  COMMAND sh -c "rm -rf \"$1\" && exec \"$0\" \"$1\""
+          $<TARGET_FILE:api_example_sign_verify> ${CMAKE_BINARY_DIR}/api-example-lib)
+add_test(NAME api_example_cli
+  COMMAND sh -c "rm -rf \"$1\" && exec bash \"$2\" \"$0\" \"$1\""
+          $<TARGET_FILE:sister-sign> ${CMAKE_BINARY_DIR}/api-example-cli
+          ${CMAKE_SOURCE_DIR}/docs/api/examples/cli_quickstart.sh)
+
 # Interop (T28): 3 algoritma x 2 arah terhadap Python cryptography + openssl CLI; lihat docs/interop.md
 add_test(NAME interop_test
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests

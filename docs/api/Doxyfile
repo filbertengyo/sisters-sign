@@ -1,0 +1,50 @@
+# Dokumentasi API sister-sign (T38). Jangan jalankan langsung; pakai `bash docs/api/build.sh`,
+# yang mengisi variabel lingkungan $(...) di bawah dan mengunduh tema doxygen-awesome-css.
+# Hanya opsi yang berbeda dari default Doxygen yang ditulis. Path relatif terhadap root repo.
+
+PROJECT_NAME           = "sister-sign"
+PROJECT_NUMBER         = $(SISTER_SIGN_VERSION)
+PROJECT_BRIEF          = "Penandatanganan dan verifikasi artefak rilis: CLI, format berkas, dan API C++"
+OUTPUT_DIRECTORY       = $(DOCS_OUT)
+# Isi dokumentasi berbahasa Indonesia; label UI Doxygen berbahasa Inggris (terjemahan Indonesia
+# Doxygen sudah lama tidak diperbarui dan menghasilkan campuran bahasa).
+OUTPUT_LANGUAGE        = English
+
+# ---- masukan ------------------------------------------------------------------------------------
+INPUT                  = docs/api/mainpage.md \
+                         docs/api/cli.md \
+                         docs/api/formats.md \
+                         docs/api/library.md \
+                         src
+FILE_PATTERNS          = *.hpp
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = docs/api/mainpage.md
+# Contoh yang ditampilkan (@snippet) adalah berkas yang dijalankan ctest.
+EXAMPLE_PATH           = docs/api/examples
+FULL_PATH_NAMES        = YES
+STRIP_FROM_PATH        = src
+STRIP_FROM_INC_PATH    = src
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+SORT_MEMBER_DOCS       = NO
+TOC_INCLUDE_HEADINGS   = 3
+
+# ---- peringatan ---------------------------------------------------------------------------------
+# Gagal bila komentar dokumentasi rusak (mis. @param untuk parameter yang tidak ada), supaya
+# dokumentasi tidak diam-diam tertinggal dari kode. Anggota tanpa komentar tidak dianggap galat.
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = NO
+WARN_NO_PARAMDOC       = NO
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+
+# ---- keluaran: HTML dengan tema doxygen-awesome-css ---------------------------------------------
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_COLORSTYLE        = LIGHT
+HTML_EXTRA_STYLESHEET  = $(AWESOME_DIR)/doxygen-awesome.css \
+                         $(AWESOME_DIR)/doxygen-awesome-sidebar-only.css
+HAVE_DOT               = NO

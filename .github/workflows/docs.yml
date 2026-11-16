@@ -1,0 +1,65 @@
+name: docs
+
+# Dokumentasi API (T38): Doxygen + doxygen-awesome-css -> GitHub Pages.
+#   pull_request : bangun saja; gagal bila ada peringatan dokumentasi (mis. @param yang salah)
+#   push ke main / manual : bangun lalu publikasikan ke GitHub Pages
+# Contoh di dokumentasi dijalankan oleh ctest di ci.yml (api_example_sign_verify, api_example_cli).
+#
+# Sekali saja: Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/api/**'
+      - 'src/**/*.hpp'
+      - 'src/util/version.cpp'
+      - .github/workflows/docs.yml
+  pull_request:
+    paths:
+      - 'docs/api/**'
+      - 'src/**/*.hpp'
+      - 'src/util/version.cpp'
+      - .github/workflows/docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build docs (doxygen)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install doxygen
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends doxygen
+      - name: Build
+        run: bash docs/api/build.sh build/docs
+      - uses: actions/upload-pages-artifact@v3
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          path: build/docs/html
+
+  deploy:
+    name: deploy to GitHub Pages
+    needs: build
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
