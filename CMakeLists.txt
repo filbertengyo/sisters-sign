@@ -71,8 +71,12 @@ add_executable(unit_tests
   tests/unit/cli_trust_test.cpp
   tests/unit/cli_sign_test.cpp
   tests/unit/verify_test.cpp
-  tests/unit/cli_verify_test.cpp)
+  tests/unit/cli_verify_test.cpp
+  tests/unit/bench_stats_test.cpp
+  tests/unit/cli_sbom_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
+# bench/stats.hpp (T29) diuji di unit_tests.
+target_include_directories(unit_tests PRIVATE ${CMAKE_SOURCE_DIR}/bench)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
 
@@ -92,7 +96,11 @@ add_test(NAME e2e_cases
 add_test(NAME e2e_harness_selftest
   COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/selftest.sh $<TARGET_FILE:sister-sign>
           ${CMAKE_BINARY_DIR}/e2e-selftest)
-set_tests_properties(e2e_cases e2e_harness_selftest PROPERTIES TIMEOUT 300)
+# Bonus T37: kasus e2e subperintah sbom (terpisah dari U01-U14).
+add_test(NAME e2e_sbom
+  COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/run.sh $<TARGET_FILE:sister-sign>
+          ${CMAKE_SOURCE_DIR}/tests/e2e/sbom-cases ${CMAKE_BINARY_DIR}/e2e-sbom-results)
+set_tests_properties(e2e_cases e2e_harness_selftest e2e_sbom PROPERTIES TIMEOUT 300)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/e2e-selftest)
 
 # Satu perintah untuk laporan: jalankan semua kasus dan tulis bukti + tabel ke tests/results/.
@@ -112,5 +120,6 @@ add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
 target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
 add_test(NAME spike_c COMMAND spike_c)
 
+# Benchmark (T29): build Release untuk angka yang bermakna; lihat bench/README.md.
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)

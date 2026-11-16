@@ -91,6 +91,8 @@ std::string to_json(const Result& r) {
 
 }  // namespace
 
+std::string result_json(const Result& r) { return to_json(r); }
+
 int run_verify(std::span<const std::string_view> args, Io io) {
   static constexpr std::string_view kSummary =
       "Verify an artifact against a bundle and trust store.";

@@ -16,6 +16,7 @@ constexpr std::string_view kUsage =
     "  sign     sign an artifact and write a bundle\n"
     "  verify   verify an artifact against a bundle and trust store\n"
     "  trust    manage the trust store (add | list | remove)\n"
+    "  sbom     signed SBOM bound to the artifact hash (sign | verify | check)\n"
     "global flags: -help, -version\n"
     "run 'sister-sign <command> -help' for command options\n";
 
@@ -57,6 +58,7 @@ int run(std::span<const std::string_view> args, Io io) {
   if (cmd == "sign") return run_sign(rest, io);
   if (cmd == "verify") return run_verify(rest, io);
   if (cmd == "trust") return run_trust(rest, io);
+  if (cmd == "sbom") return run_sbom(rest, io);
 
   io.err << "unknown command: " << cmd << "\n" << kUsage;
   return 2;
