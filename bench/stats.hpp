@@ -1,5 +1,5 @@
 #pragma once
-// Statistik ringkas untuk benchmark (T29). Header-only supaya bisa diuji di unit_tests tanpa
+// Statistik ringkas untuk benchmark. Header-only supaya bisa diuji di unit_tests tanpa
 // menautkan program benchmark.
 //
 // Definisi yang dipakai di docs/benchmark.md:

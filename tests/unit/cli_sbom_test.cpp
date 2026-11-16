@@ -1,4 +1,4 @@
-// T37 (bonus): `sbom sign | verify | check`.
+// Bonus: `sbom sign | verify | check`.
 #include <doctest/doctest.h>
 #include <unistd.h>
 

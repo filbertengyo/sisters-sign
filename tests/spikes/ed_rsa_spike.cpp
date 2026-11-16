@@ -1,7 +1,7 @@
-// Spike C (T04): panggilan EVP yang benar untuk Ed25519 (one-shot) dan RSA-PSS 3072.
-// Ringkasan hasil + snippet final ada di docs/spike-c.md; dipakai T07 (Ed25519) dan T09 (RSA-PSS).
+// Spike C: panggilan EVP yang benar untuk Ed25519 (one-shot) dan RSA-PSS 3072.
+// Ringkasan hasil + snippet final ada di docs/spike-c.md; dipakai implementasi Ed25519 dan RSA-PSS.
 //
-// Bukan kode produksi: deleter lokal di bawah nanti diganti RAII dari crypto/raii.hpp (T06).
+// Bukan kode produksi: deleter lokal di bawah nanti diganti RAII dari crypto/raii.hpp.
 // Jalankan lewat `ctest -R spike_c`. Set SPIKE_C_DUMP=<dir> untuk menulis pubkey/pesan/sig
 // agar bisa dicek silang dengan CLI `openssl` (perintahnya ada di docs/spike-c.md).
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
@@ -54,7 +54,7 @@ using BioPtr = std::unique_ptr<BIO, BioFree>;
 
 Bytes to_bytes(std::string_view s) { return Bytes(s.begin(), s.end()); }
 
-// Contoh pesan M (bentuk manifest final ditentukan T12; isi tidak penting untuk spike ini).
+// Contoh pesan M (manifest final: manifest/manifest.hpp; isinya tidak penting untuk spike ini).
 const Bytes kMsg =
     to_bytes(R"({"schema":"sister-sign/manifest/v1","package":"demo","version":"1.0.0"})");
 
@@ -145,7 +145,7 @@ PkeyPtr gen_rsa(unsigned bits, unsigned long e) {
   return PkeyPtr(raw);
 }
 
-// Cek profil yang dipakai T09/T11: tipe RSA (rsaEncryption), 3072 bit, e = 65537.
+// Cek profil yang dipakai RSA-PSS dan I/O kunci: tipe RSA (rsaEncryption), 3072 bit, e = 65537.
 bool rsa_e_is_f4(EVP_PKEY* key) {
   BIGNUM* raw = nullptr;
   if (EVP_PKEY_get_bn_param(key, OSSL_PKEY_PARAM_RSA_E, &raw) != 1) return false;

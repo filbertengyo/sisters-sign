@@ -1,4 +1,4 @@
-// Contoh API library (T38): sign lalu verify sebuah artefak tanpa CLI, memakai modul yang sama
+// Contoh API library: sign lalu verify sebuah artefak tanpa CLI, memakai modul yang sama
 // dengan `sister-sign sign` / `sister-sign verify`. Dibangun dan dijalankan oleh ctest
 // (api_example_sign_verify), jadi contoh di dokumentasi API selalu benar-benar jalan.
 //

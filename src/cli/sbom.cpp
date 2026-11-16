@@ -1,4 +1,4 @@
-// sbom (T37, bonus): SBOM bertanda tangan yang terikat ke hash artefak rilis.
+// sbom (bonus): SBOM bertanda tangan yang terikat ke hash artefak rilis.
 //
 //   sister-sign sbom sign   -sbom S -package P -version V -key K -out B
 //   sister-sign sbom verify -sbom S -bundle B -trust-store T -package P -version V [-json]

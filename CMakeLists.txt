@@ -78,7 +78,7 @@ add_executable(unit_tests
   tests/unit/bench_stats_test.cpp
   tests/unit/cli_sbom_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
-# bench/stats.hpp (T29) diuji di unit_tests.
+# bench/stats.hpp diuji di unit_tests.
 target_include_directories(unit_tests PRIVATE ${CMAKE_SOURCE_DIR}/bench)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
@@ -99,7 +99,7 @@ add_test(NAME e2e_cases
 add_test(NAME e2e_harness_selftest
   COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/selftest.sh $<TARGET_FILE:sister-sign>
           ${CMAKE_BINARY_DIR}/e2e-selftest)
-# Bonus T37: kasus e2e subperintah sbom (terpisah dari U01-U14).
+# Bonus: kasus e2e subperintah sbom (terpisah dari U01-U14).
 add_test(NAME e2e_sbom
   COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/run.sh $<TARGET_FILE:sister-sign>
           ${CMAKE_SOURCE_DIR}/tests/e2e/sbom-cases ${CMAKE_BINARY_DIR}/e2e-sbom-results)
@@ -118,7 +118,7 @@ add_executable(spike_a tests/spikes/glaze_spike.cpp)
 target_link_libraries(spike_a PRIVATE doctest::doctest glaze::glaze project_options)
 add_test(NAME spike_a COMMAND spike_a)
 
-# Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md
+# Spike C: Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md
 add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
 target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
 add_test(NAME spike_c COMMAND spike_c)
@@ -136,7 +136,7 @@ add_executable(rollback_demo tests/attacks/rollback_demo.cpp)
 target_link_libraries(rollback_demo PRIVATE project_options)
 add_test(NAME rollback_demo COMMAND rollback_demo)
 
-# Contoh di dokumentasi API (T38, docs/api): dijalankan supaya contoh yang ditampilkan selalu benar.
+# Contoh di dokumentasi API (docs/api): dijalankan supaya contoh yang ditampilkan selalu benar.
 add_executable(api_example_sign_verify docs/api/examples/sign_verify.cpp)
 target_link_libraries(api_example_sign_verify PRIVATE core project_options)
 add_test(NAME api_example_sign_verify
@@ -147,13 +147,13 @@ add_test(NAME api_example_cli
           $<TARGET_FILE:sister-sign> ${CMAKE_BINARY_DIR}/api-example-cli
           ${CMAKE_SOURCE_DIR}/docs/api/examples/cli_quickstart.sh)
 
-# Interop (T28): 3 algoritma x 2 arah terhadap Python cryptography + openssl CLI; lihat docs/interop.md
+# Interop: 3 algoritma x 2 arah terhadap Python cryptography + openssl CLI; lihat docs/interop.md
 add_test(NAME interop_test
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests
   COMMAND ${Python3_EXECUTABLE} -m interop.main $<TARGET_FILE:sister-sign>
           ${CMAKE_BINARY_DIR}/interop-results)
 set_tests_properties(interop_test PROPERTIES TIMEOUT 300)
 
-# Benchmark (T29): build Release untuk angka yang bermakna; lihat bench/README.md.
+# Benchmark: build Release untuk angka yang bermakna; lihat bench/README.md.
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)

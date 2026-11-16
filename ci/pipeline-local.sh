@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Jalankan pipeline contoh (T26) di luar GitHub Actions dengan urutan dan skrip yang SAMA dengan
+# Jalankan pipeline contoh di luar GitHub Actions dengan urutan dan skrip yang SAMA dengan
 # .github/workflows/release-pipeline.yml: Persiapan -> Sign (x3 algoritma) -> Verify -> Deploy.
 #
 #   bash ci/pipeline-local.sh <image@digest> <dir-privkey> <dir-kerja> [--tamper]
@@ -29,7 +29,7 @@ meta="$(bash "$here/extract-binary.sh" "$ref" "$work/dist")"
 name="$(sed -n 's/^name=//p' <<<"$meta")"
 sha256="$(sed -n 's/^sha256=//p' <<<"$meta")"
 artifact="$work/dist/$name"
-sbom="$work/dist/$name.cdx.json" # T37: SBOM yang mengikat SHA-256 artefak, ikut ditandatangani
+sbom="$work/dist/$name.cdx.json" # SBOM yang mengikat SHA-256 artefak, ikut ditandatangani
 bash "$here/make-sbom.sh" "$ref" "$artifact" >"$sbom"
 
 echo "== [2/4] Sign (artefak + SBOM)"

@@ -1,4 +1,4 @@
-# Benchmark (T29)
+# Benchmark
 
 Program: [`bench_main.cpp`](bench_main.cpp) (target CMake `bench`), statistik: [`stats.hpp`](stats.hpp) (diuji di `tests/unit/bench_stats_test.cpp`). Hasil dan analisis: [`docs/benchmark.md`](../docs/benchmark.md). Data mentah: [`results/`](results/).
 
@@ -17,7 +17,7 @@ cmake -B build-release -DCMAKE_BUILD_TYPE=Release && cmake --build build-release
 bash bench/compare.sh bench/results/run1/summary.csv bench/results/run2/summary.csv
 ```
 
-`bench` menolak `-iterations < 30`, `-warmup < 5`, dan `-keygen < 5` (batas minimum T29). Jangan jalankan pekerjaan berat lain selama benchmark.
+`bench` menolak `-iterations < 30`, `-warmup < 5`, dan `-keygen < 5` (batas minimum spek). Jangan jalankan pekerjaan berat lain selama benchmark.
 
 ## Metode
 

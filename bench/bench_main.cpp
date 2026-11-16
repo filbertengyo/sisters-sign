@@ -1,4 +1,4 @@
-// Benchmark sister-sign (T29). Metode lengkap: bench/README.md; hasil: docs/benchmark.md.
+// Benchmark sister-sign. Metode lengkap: bench/README.md; hasil: docs/benchmark.md.
 //
 //   bench [-out DIR] [-work DIR] [-iterations N] [-warmup N] [-keygen N] [-sizes B1,B2,...]
 //
@@ -112,9 +112,9 @@ Options parse_options(int argc, char** argv) {
       die("flag tidak dikenal: " + std::string(flag));
     }
   }
-  if (o.iterations < 30) die("-iterations minimal 30 (spek T29)");
-  if (o.warmup < 5) die("-warmup minimal 5 (spek T29)");
-  if (o.keygen < 5) die("-keygen minimal 5 (spek T29)");
+  if (o.iterations < 30) die("-iterations minimal 30 (spek)");
+  if (o.warmup < 5) die("-warmup minimal 5 (spek)");
+  if (o.keygen < 5) die("-keygen minimal 5 (spek)");
   return o;
 }
 

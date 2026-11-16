@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bandingkan median dua run benchmark (T29: "jalankan 2x, median beda < 20%").
+# Bandingkan median dua run benchmark ("jalankan 2x, median beda < 20%").
 #
 #   bash bench/compare.sh <run1/summary.csv> <run2/summary.csv> [batas-persen]
 #

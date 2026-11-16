@@ -1,7 +1,7 @@
-# Spike C: Ed25519 one-shot & parameter RSA-PSS (T04)
+# Spike C: Ed25519 one-shot & parameter RSA-PSS
 
 Kode: [`tests/spikes/ed_rsa_spike.cpp`](../tests/spikes/ed_rsa_spike.cpp), jalan lewat `ctest -R spike_c`.
-Dipakai oleh T07 (Ed25519) dan T09 (RSA-PSS); temuan umum juga relevan untuk T06, T08, T11.
+Dipakai oleh implementasi Ed25519 dan RSA-PSS; temuan umum juga relevan untuk RAII OpenSSL, ECDSA P-256, dan I/O kunci.
 
 ## Ringkasan
 
@@ -31,7 +31,7 @@ Perilaku streaming Ed25519 lintas versi (tabel di bawah) diukur dengan probe C k
 
 ## Ed25519
 
-### Snippet final (T07)
+### Snippet final
 
 ```cpp
 // sign: one-shot, md = NULL, pesan M apa adanya
@@ -73,7 +73,7 @@ return ok;
 
 ## RSA-PSS 3072
 
-### Snippet final (T09)
+### Snippet final
 
 ```cpp
 // parameter PSS dipasang di pctx milik ctx (JANGAN di-free sendiri), SAMA untuk sign & verify
@@ -113,7 +113,7 @@ bool rsa_profile_ok(EVP_PKEY* key) {
 }
 ```
 
-Keygen yang diuji (untuk T11): `EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr)`, `EVP_PKEY_keygen_init`, `EVP_PKEY_CTX_set_rsa_keygen_bits(3072)`, `EVP_PKEY_CTX_set1_rsa_keygen_pubexp(e=65537)`, `EVP_PKEY_generate`. Butuh sekitar 1 detik per kunci, jadi test cukup memakai satu kunci fixture.
+Keygen yang diuji (untuk I/O kunci): `EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr)`, `EVP_PKEY_keygen_init`, `EVP_PKEY_CTX_set_rsa_keygen_bits(3072)`, `EVP_PKEY_CTX_set1_rsa_keygen_pubexp(e=65537)`, `EVP_PKEY_generate`. Butuh sekitar 1 detik per kunci, jadi test cukup memakai satu kunci fixture.
 
 ### Temuan
 
@@ -123,15 +123,15 @@ Keygen yang diuji (untuk T11): `EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullp
 4. Verify tanpa `set_rsa_padding(PSS)` (default PKCS#1 v1.5) ditolak.
 5. Dua sign pada pesan yang sama menghasilkan sig BERBEDA, dan dua-duanya verify.
 6. Sig 383/385 byte, flip 1 bit sig/pesan, dan kunci lain semuanya ditolak OpenSSL. Tetap cek panjang == 384 secara eksplisit.
-7. Kunci dari keygen `"RSA"` bertipe `EVP_PKEY_RSA` dengan OID SPKI rsaEncryption, bukan `EVP_PKEY_RSA_PSS`. Kunci bertipe RSASSA-PSS punya SPKI berbeda, jadi keyid-nya juga berbeda. Usul untuk T11: profil `rsa-pss` hanya menerima `EVP_PKEY_RSA` 3072/e=65537 dan menolak tipe `RSA_PSS` supaya keyid stabil. Perlu disepakati.
+7. Kunci dari keygen `"RSA"` bertipe `EVP_PKEY_RSA` dengan OID SPKI rsaEncryption, bukan `EVP_PKEY_RSA_PSS`. Kunci bertipe RSASSA-PSS punya SPKI berbeda, jadi keyid-nya juga berbeda. Usul untuk I/O kunci: profil `rsa-pss` hanya menerima `EVP_PKEY_RSA` 3072/e=65537 dan menolak tipe `RSA_PSS` supaya keyid stabil. Perlu disepakati.
 8. Kunci 2048 bit atau e=3 terdeteksi lewat `EVP_PKEY_get_bits` / `OSSL_PKEY_PARAM_RSA_E`.
 
-## Rekomendasi untuk T06 / T07 / T08 / T09
+## Rekomendasi untuk RAII OpenSSL, Ed25519, ECDSA, dan RSA-PSS
 
 - **Pakai one-shot `EVP_DigestSign` / `EVP_DigestVerify` untuk KETIGA algoritma.** M (manifest) kecil dan sudah ada di memori. Satu jalur kode berarti tidak ada risiko streaming Ed25519 tidak sengaja terpanggil. ECDSA dan RSA-PSS juga jalan dengan one-shot.
 - Ukuran buffer sig ambil dari `EVP_PKEY_get_size(key)`, lalu `resize(len)` setelah sign. Untuk ECDSA ini ukuran DER maksimum, sebelum konversi ke r||s (lihat spike B).
 - Hanya return `== 1` yang berarti sukses. `EVP_DigestVerify` return 0 untuk sig salah dan < 0 untuk error lain.
-- Setelah kegagalan yang diharapkan (verify gagal), panggil `ERR_clear_error()`. `openssl_error()` di T06 sebaiknya menguras antrean (`ERR_get_error` sampai 0) supaya pesan error berikutnya tidak tercampur.
+- Setelah kegagalan yang diharapkan (verify gagal), panggil `ERR_clear_error()`. `openssl_error()` di RAII OpenSSL (`crypto/raii.hpp`) sebaiknya menguras antrean (`ERR_get_error` sampai 0) supaya pesan error berikutnya tidak tercampur.
 - `EVP_PKEY_CTX*` yang dikembalikan `EVP_DigestSignInit`/`EVP_DigestVerifyInit` dimiliki `EVP_MD_CTX`. JANGAN dibungkus RAII atau di-free sendiri.
 - Satu `EVP_MD_CTX` per operasi; jangan dipakai ulang.
 

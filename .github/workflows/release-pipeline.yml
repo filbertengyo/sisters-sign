@@ -1,9 +1,9 @@
 name: release-pipeline
 
-# Pipeline contoh (T26) yang MEMAKAI image sister-sign sebagai kakas, tanpa build dari source:
+# Pipeline contoh yang MEMAKAI image sister-sign sebagai kakas, tanpa build dari source:
 #
 #   prepare : pull image BY DIGEST, ambil artefak rilis (binary sister-sign dari image itu) dan
-#             buat SBOM CycloneDX yang memuat SHA-256 binary (T37)
+#             buat SBOM CycloneDX yang memuat SHA-256 binary
 #   sign    : privkey dari CI secret -> temp file 0600 -> dihapus; x3 algoritma; artefak + SBOM
 #   verify  : `verify -json` + `sbom verify/check -json` TANPA privkey; trust store dari repo
 #             (ci/trust-store.json), bukan dari bundle/artefak; exit code asli yang menentukan
@@ -88,7 +88,7 @@ jobs:
         env:
           IMAGE: ${{ steps.image.outputs.image }}
         run: bash ci/extract-binary.sh "$IMAGE" dist | tee -a "$GITHUB_OUTPUT"
-      - name: SBOM CycloneDX yang mengikat SHA-256 binary (T37)
+      - name: SBOM CycloneDX yang mengikat SHA-256 binary
         env:
           IMAGE: ${{ steps.image.outputs.image }}
           NAME: ${{ steps.artifact.outputs.name }}
@@ -184,7 +184,7 @@ jobs:
         run: |
           bash ci/verify-artifact.sh "$IMAGE" "dist/$ARTIFACT" "bundle/$ARTIFACT.$ALG.bundle.json" \
             "$TRUST_STORE" "$PACKAGE" "$VERSION" "result/verify-$ALG.json"
-      - name: Verify SBOM + keterikatan ke artefak (T37)
+      - name: Verify SBOM + keterikatan ke artefak
         run: |
           bash ci/verify-sbom.sh "$IMAGE" "dist/$ARTIFACT.cdx.json" "bundle/$ARTIFACT.cdx.json.$ALG.bundle.json" \
             "$TRUST_STORE" "$PACKAGE" "$VERSION" "dist/$ARTIFACT" result "$ALG"

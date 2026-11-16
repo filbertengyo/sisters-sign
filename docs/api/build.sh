@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bangun dokumentasi API (T38): Doxygen + tema doxygen-awesome-css (versi dipin + checksum).
+# Bangun dokumentasi API: Doxygen + tema doxygen-awesome-css (versi dipin + checksum).
 #
 #   bash docs/api/build.sh [dir-output]      # default build/docs -> build/docs/html/index.html
 #

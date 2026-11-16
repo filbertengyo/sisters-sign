@@ -1,6 +1,6 @@
 #pragma once
 /// @file
-/// @brief RAII untuk objek OpenSSL + buffer rahasia (T06).
+/// @brief RAII untuk objek OpenSSL + buffer rahasia.
 ///
 /// Semua alokasi/pembebasan OpenSSL di kode produksi wajib lewat tipe di sini; jangan memanggil
 /// `*_free` manual.

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# sister-sign container image (T25): image kecil berisi binary `sister-sign` saja.
+# sister-sign container image: image kecil berisi binary `sister-sign` saja.
 #
 #   build   : debian:trixie + g++-14 + CMake 3.31 + libssl-dev (OpenSSL 3.5), semua dari apt
 #   runtime : debian:trixie-slim + libssl3t64 (OpenSSL 3.5), user non-root, tanpa kunci

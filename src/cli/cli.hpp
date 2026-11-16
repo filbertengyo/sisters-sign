@@ -38,7 +38,7 @@ int run_keygen(std::span<const std::string_view> args, Io io);
 int run_sign(std::span<const std::string_view> args, Io io);
 int run_verify(std::span<const std::string_view> args, Io io);
 int run_trust(std::span<const std::string_view> args, Io io);
-// Bonus T37: `sbom sign|verify|check` (lihat sbom.cpp). Tidak mengubah subcommand wajib.
+// Bonus: `sbom sign|verify|check` (lihat sbom.cpp). Tidak mengubah subcommand wajib.
 int run_sbom(std::span<const std::string_view> args, Io io);
 
 /// @brief Hasil verify sebagai satu objek JSON satu baris (Tabel 2.9).

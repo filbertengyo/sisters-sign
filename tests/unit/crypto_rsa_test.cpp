@@ -161,7 +161,7 @@ TEST_CASE("RSA-PSS rejects keys of another profile") {
 
 TEST_CASE("RSA-PSS interop with the openssl CLI (both directions)") {
   if (!has_cli()) {
-    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup T28 interop)");
+    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup uji interop)");
     return;
   }
   namespace fs = std::filesystem;

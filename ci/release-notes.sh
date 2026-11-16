@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Catatan rilis untuk draft GitHub Release (T36), dibuat dari hasil deploy yang sudah terverifikasi.
+# Catatan rilis untuk draft GitHub Release, dibuat dari hasil deploy yang sudah terverifikasi.
 #
 #   bash ci/release-notes.sh <tag> <versi> <image@digest> <dir-deploy>
 set -euo pipefail

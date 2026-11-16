@@ -1,4 +1,4 @@
-# Benchmark sister-sign (T29)
+# Benchmark sister-sign
 
 Metode, cara menjalankan, dan format berkas: [`bench/README.md`](../bench/README.md). Data mentah (setiap sampel) dan ringkasan: [`bench/results/run1/`](../bench/results/run1), [`bench/results/run2/`](../bench/results/run2), perbandingan: [`bench/results/compare.md`](../bench/results/compare.md). Semua angka di bawah diambil dari `run1/summary.csv` dan `run1/sizes.csv` kecuali disebut lain.
 
@@ -11,7 +11,7 @@ Metode, cara menjalankan, dan format berkas: [`bench/README.md`](../bench/README
 | OS | Debian GNU/Linux 13 (trixie) di container Docker 28.5.1 (Docker Desktop), kernel `6.6.87.2-microsoft-standard-WSL2`, host Windows 11 |
 | Compiler | GCC 14.2.0, `-O3 -DNDEBUG` (`CMAKE_BUILD_TYPE=Release`) |
 | OpenSSL | 3.5.7 (9 Jun 2026), paket Debian `libssl-dev` |
-| sister-sign | 0.1.0 (`main` `3bf4ae0` + perubahan T25/T26/T29 yang belum di-commit) |
+| sister-sign | 0.1.0 (`main` `3bf4ae0` + perubahan yang belum di-commit) |
 | Jam | `std::chrono::steady_clock`, 1 pengukuran per operasi |
 | Pengulangan | 5 pemanasan + 30 diukur; keygen 21 pasangan (+1 pemanasan); pemanasan CPU global 2 s |
 | Penempatan | program `bench` di-pin ke CPU 2 (`taskset -c 2`); artefak di `/tmp` container (bukan bind mount Windows) |

@@ -1,4 +1,4 @@
-# Interoperability (T28)
+# Interoperability
 
 `tests/interop/` checks that sister-sign's key, manifest, bundle and signature formats can be
 produced and consumed by an independent implementation: Python

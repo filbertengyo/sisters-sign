@@ -1,4 +1,4 @@
-# Dokumentasi API sister-sign (T38). Jangan jalankan langsung; pakai `bash docs/api/build.sh`,
+# Dokumentasi API sister-sign. Jangan jalankan langsung; pakai `bash docs/api/build.sh`,
 # yang mengisi variabel lingkungan $(...) di bawah dan mengunduh tema doxygen-awesome-css.
 # Hanya opsi yang berbeda dari default Doxygen yang ditulis. Path relatif terhadap root repo.
 

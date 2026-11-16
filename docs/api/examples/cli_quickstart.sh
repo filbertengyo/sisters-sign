@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Contoh CLI (T38) yang ditampilkan di dokumentasi API. Dijalankan ctest (api_example_cli), jadi
+# Contoh CLI yang ditampilkan di dokumentasi API. Dijalankan ctest (api_example_cli), jadi
 # setiap perintah di dokumentasi benar-benar jalan dengan exit code yang tertulis.
 #
 #   bash docs/api/examples/cli_quickstart.sh <path/ke/sister-sign> <direktori-kerja-kosong>

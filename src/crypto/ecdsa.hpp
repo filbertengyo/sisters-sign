@@ -23,7 +23,7 @@ Outcome<Bytes> ecdsa_sign(const PrivateKey& key, ByteView message);
 /// @return true bila sah
 bool ecdsa_verify(const PublicKey& key, ByteView message, ByteView signature);
 
-/// @brief Konversi signature DER ke r||s. Diekspos untuk pengujian dan interop (T28).
+/// @brief Konversi signature DER ke r||s. Diekspos untuk pengujian dan interop.
 /// @param der signature ASN.1 DER
 /// @return r||s 64 byte, atau `INVALID_SIGNATURE` bila DER tidak sah
 Outcome<Bytes> ecdsa_der_to_raw(ByteView der);

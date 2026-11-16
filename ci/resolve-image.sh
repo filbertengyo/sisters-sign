@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tahap Persiapan (T26): pull image sister-sign BY DIGEST dan pastikan yang terpasang memang image
+# Tahap Persiapan: pull image sister-sign BY DIGEST dan pastikan yang terpasang memang image
 # dengan digest itu. Tag (`:latest`, `:0.1.0`) ditolak karena bisa dipindah ke image lain.
 #
 #   bash ci/resolve-image.sh <repo>@sha256:<digest>

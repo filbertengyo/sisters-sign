@@ -163,7 +163,7 @@ TEST_CASE("ECDSA der_to_raw rejects garbage") {
 
 TEST_CASE("ECDSA signature verifies with the openssl CLI after converting back to DER") {
   if (std::system("openssl version > /dev/null 2>&1") != 0) {
-    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup T28 interop)");
+    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup uji interop)");
     return;
   }
   namespace fs = std::filesystem;

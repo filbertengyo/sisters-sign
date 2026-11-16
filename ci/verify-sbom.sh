@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tahap Verify untuk SBOM (T37): `sbom verify -json` (tanda tangan SBOM, Algoritma 2 + isi SBOM)
+# Tahap Verify untuk SBOM: `sbom verify -json` (tanda tangan SBOM, Algoritma 2 + isi SBOM)
 # lalu `sbom check -json` (SHA-256 artefak rilis == SHA-256 di SBOM). Tanpa privkey; trust store
 # dari sumber tepercaya. Keduanya selalu dijalankan supaya buktinya lengkap.
 #

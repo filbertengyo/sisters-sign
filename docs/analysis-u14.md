@@ -52,8 +52,8 @@ Catatan:
 - Kedua signature berformat `r || s` 64 byte (hasil DER dikonversi), jadi perbandingan byte langsung
   valid. Low-S tidak dinormalisasi, sesuai spek.
 - Keamanan: yang berbahaya adalah *nonce yang dipakai ulang atau bias*, bukan signature yang
-  identik. Nonce deterministik menghilangkan risiko ini selama implementasinya benar (demo reuse nonce
-  direncanakan di T30).
+  identik. Nonce deterministik menghilangkan risiko ini selama implementasinya benar (lihat demo
+  reuse nonce, `tests/attacks/nonce_reuse.py`).
 
 ### RSA-PSS (3072 bit, SHA-256, MGF1-SHA-256, salt 32 byte): berbeda (salt acak)
 

@@ -135,7 +135,7 @@ TEST_CASE("Ed25519 is deterministic (RFC 8032)") {
 
 TEST_CASE("Ed25519 signature verifies with the openssl CLI") {
   if (std::system("openssl version > /dev/null 2>&1") != 0) {
-    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup T28 interop)");
+    MESSAGE("openssl CLI tidak ada; cek silang dilewati (dicakup uji interop)");
     return;
   }
   namespace fs = std::filesystem;

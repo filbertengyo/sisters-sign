@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Uji pipeline contoh (T26) tanpa secret: push image ke registry lokal supaya bisa dirujuk BY
+# Uji pipeline contoh tanpa secret: push image ke registry lokal supaya bisa dirujuk BY
 # DIGEST, buat kunci + trust store SEMENTARA, lalu jalankan ci/pipeline-local.sh dua kali:
 #
 #   1. jalur sah          -> exit 0, berkas penanda DEPLOYED ada, verify x3 OK

@@ -1,6 +1,6 @@
 name: docs
 
-# Dokumentasi API (T38): Doxygen + doxygen-awesome-css -> GitHub Pages.
+# Dokumentasi API: Doxygen + doxygen-awesome-css -> GitHub Pages.
 #   pull_request : bangun saja; gagal bila ada peringatan dokumentasi (mis. @param yang salah)
 #   push ke main / manual : bangun lalu publikasikan ke GitHub Pages
 # Contoh di dokumentasi dijalankan oleh ctest di ci.yml (api_example_sign_verify, api_example_cli).
