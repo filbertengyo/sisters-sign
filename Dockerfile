@@ -20,7 +20,7 @@ FROM ${BUILD_IMAGE} AS build
 # git + ca-certificates untuk FetchContent (glaze, doctest).
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      g++-14 cmake ninja-build git ca-certificates libssl-dev \
+      g++-14 cmake ninja-build git ca-certificates libssl-dev python3 python3-ecdsa \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
