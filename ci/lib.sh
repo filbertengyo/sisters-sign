@@ -18,7 +18,16 @@ host_path() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -w "$p"; else printf '%s\n' "$p"; fi
 }
 
+# Flag container untuk SEMUA pemanggilan image (juga dipakai uji C05 untuk `docker create` +
+# inspect, supaya yang diperiksa sama persis dengan yang dijalankan). Tanpa -t / -i.
+# shellcheck disable=SC2034 # dipakai tool_run dan tests/integration/run.sh
+tool_flags() {
+  TOOL_FLAGS=(--network none --user "$(id -u):$(id -g)" --read-only --cap-drop ALL
+    --security-opt no-new-privileges)
+}
+
 # tool_run IMAGE [docker-run-args... --] sister-sign-args...
+# TOOL_RUN_LOG (opsional): berkas tempat perintah docker run dicatat (bukti uji integrasi).
 tool_run() {
   local image="$1"
   shift
@@ -28,8 +37,15 @@ tool_run() {
     shift
   done
   [ "${1:-}" = "--" ] && shift
-  docker run --rm --network none --user "$(id -u):$(id -g)" --read-only --cap-drop ALL \
-    --security-opt no-new-privileges "${extra[@]}" "$image" "$@" </dev/null
+  tool_flags
+  if [ -n "${TOOL_RUN_LOG:-}" ]; then
+    {
+      printf 'docker run --rm'
+      printf ' %q' "${TOOL_FLAGS[@]}" "${extra[@]}" "$image" "$@"
+      printf ' </dev/null\n'
+    } >>"$TOOL_RUN_LOG"
+  fi
+  docker run --rm "${TOOL_FLAGS[@]}" "${extra[@]}" "$image" "$@" </dev/null
 }
 
 # Image wajib dirujuk by digest: <repo>@sha256:<64 hex>.

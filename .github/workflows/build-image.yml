@@ -19,6 +19,8 @@ on:
       - .github/workflows/build-image.yml
       - .github/workflows/release-pipeline.yml
       - 'ci/**'
+      - .github/workflows/integration.yml
+      - 'tests/integration/**'
       - CMakeLists.txt
       - 'include/**'
       - 'src/**'
@@ -64,6 +66,9 @@ jobs:
         run: bash ci/check-image.sh sister-sign:ci
       - name: Uji pipeline (sah -> deploy; artefak diubah -> verify gagal, tanpa deploy)
         run: bash ci/test-pipeline.sh sister-sign:ci localhost:5000
+      # T27: skenario C01-C05 dengan kunci sementara (bukti resmi = integration.yml pada image rilis).
+      - name: Uji integrasi C01-C05 (selftest, kunci sementara)
+        run: bash tests/integration/selftest.sh sister-sign:ci localhost:5000
 
   publish:
     name: build + push to GHCR (linux/amd64)
@@ -182,4 +187,16 @@ jobs:
     with:
       image: ${{ needs.publish.outputs.image }}@${{ needs.publish.outputs.digest }}
       release_tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  # T27: bukti C01-C05 pada image yang sama (terpisah dari rilis; tidak memblokir release-pipeline).
+  integration:
+    name: integration C01-C05
+    needs: [publish, verify-public]
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/integration.yml
+    with:
+      image: ${{ needs.publish.outputs.image }}@${{ needs.publish.outputs.digest }}
     secrets: inherit

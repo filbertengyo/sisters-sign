@@ -16,7 +16,11 @@ set -euo pipefail
 [ "$#" -eq 7 ] || die "usage: ci/verify-artifact.sh <image@digest> <artifact> <bundle> <trust-store> <package> <version> <out-json>"
 ref="$1" artifact="$2" bundle="$3" store="$4" package="$5" version="$6" result="$7"
 require_digest_ref "$ref"
-for f in "$artifact" "$bundle" "$store"; do [ -f "$f" ] || die "berkas tidak ada: $f"; done
+for f in "$bundle" "$store"; do [ -f "$f" ] || die "berkas tidak ada: $f"; done
+# Artefak yang hilang TIDAK dicek di sini: CLI yang harus menolaknya (INPUT_ERROR, exit 2), supaya
+# exit code yang tercatat adalah exit code asli program (uji C04). Direktorinya harus ada, karena
+# docker membuat direktori bind mount yang belum ada.
+[ -d "$(dirname "$artifact")" ] || die "direktori artefak tidak ada: $(dirname "$artifact")"
 
 mkdir -p "$(dirname "$result")"
 adir="$(host_path "$(dirname "$artifact")")"
