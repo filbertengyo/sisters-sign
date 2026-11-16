@@ -1,0 +1,303 @@
+name: release-pipeline
+
+# Pipeline contoh (T26) yang MEMAKAI image sister-sign sebagai kakas, tanpa build dari source:
+#
+#   prepare : pull image BY DIGEST, ambil artefak rilis (binary sister-sign dari image itu) dan
+#             buat SBOM CycloneDX yang memuat SHA-256 binary (T37)
+#   sign    : privkey dari CI secret -> temp file 0600 -> dihapus; x3 algoritma; artefak + SBOM
+#   verify  : `verify -json` + `sbom verify/check -json` TANPA privkey; trust store dari repo
+#             (ci/trust-store.json), bukan dari bundle/artefak; exit code asli yang menentukan
+#   deploy  : berkas penanda DEPLOYED; `needs: verify`, jadi tidak jalan bila satu verify gagal
+#   audit   : bukti privkey tidak ada di artefak maupun log job
+#   release : (hanya dari tag, lewat build-image.yml) draft GitHub Release berisi artefak terverifikasi
+#
+# DILARANG continue-on-error dan `|| true` di jalur sign -> verify -> deploy.
+# Semua langkah memakai skrip di ci/ yang juga bisa dijalankan lokal (ci/pipeline-local.sh).
+#
+# Secret yang dibutuhkan (Settings -> Secrets and variables -> Actions), isi = PEM PKCS#8 kunci DEMO:
+#   DEMO_KEY_ED25519, DEMO_KEY_ECDSA_P256, DEMO_KEY_RSA_PSS   (lihat ci/README.md)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: 'Image by digest (<repo>@sha256:...). Kosong = isi ci/image-ref.txt'
+        required: false
+        default: ''
+      tamper:
+        description: 'Uji negatif: ubah 1 byte artefak sebelum verify (verify harus gagal, deploy tidak jalan)'
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      image:
+        description: 'Image by digest (<repo>@sha256:...)'
+        type: string
+        required: true
+      tamper:
+        type: boolean
+        default: false
+      release_tag:
+        description: 'Tag git; bila diisi, buat draft GitHub Release setelah deploy'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+# `shell: bash` = bash -eo pipefail: kegagalan di tengah pipe tidak tertutupi `tee`.
+defaults:
+  run:
+    shell: bash
+
+env:
+  PACKAGE: sister-sign
+  TRUST_STORE: ci/trust-store.json
+
+jobs:
+  prepare:
+    name: persiapan (pull image by digest)
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      version: ${{ steps.pull.outputs.version }}
+      artifact: ${{ steps.artifact.outputs.name }}
+      sha256: ${{ steps.artifact.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Tentukan image
+        id: image
+        env:
+          INPUT_IMAGE: ${{ inputs.image }}
+        run: |
+          ref="$INPUT_IMAGE"
+          if [ -z "$ref" ]; then
+            ref="$(grep -v -e '^#' -e '^[[:space:]]*$' ci/image-ref.txt | head -n1)"
+          fi
+          echo "image=$ref" >> "$GITHUB_OUTPUT"
+          echo "image: $ref"
+      - name: Pull image by digest
+        id: pull
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: bash ci/resolve-image.sh "$IMAGE" >> "$GITHUB_OUTPUT"
+      - name: Artefak rilis (binary dari image)
+        id: artifact
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: bash ci/extract-binary.sh "$IMAGE" dist | tee -a "$GITHUB_OUTPUT"
+      - name: SBOM CycloneDX yang mengikat SHA-256 binary (T37)
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          NAME: ${{ steps.artifact.outputs.name }}
+        run: |
+          bash ci/make-sbom.sh "$IMAGE" "dist/$NAME" > "dist/$NAME.cdx.json"
+          echo "SBOM: dist/$NAME.cdx.json ($(wc -c < "dist/$NAME.cdx.json") byte)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifact
+          path: dist/
+          if-no-files-found: error
+
+  sign:
+    name: sign (${{ matrix.algorithm }})
+    needs: prepare
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - algorithm: ed25519
+            secret: DEMO_KEY_ED25519
+          - algorithm: ecdsa-p256-sha256
+            secret: DEMO_KEY_ECDSA_P256
+          - algorithm: rsa-pss-sha256
+            secret: DEMO_KEY_RSA_PSS
+    env:
+      IMAGE: ${{ needs.prepare.outputs.image }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      ARTIFACT: ${{ needs.prepare.outputs.artifact }}
+      ALG: ${{ matrix.algorithm }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifact
+          path: dist
+      - name: Pull image by digest
+        run: bash ci/resolve-image.sh "$IMAGE"
+      - name: Sign artefak + SBOM (privkey dari secret -> temp file -> dihapus)
+        env:
+          SIGNING_KEY: ${{ secrets[matrix.secret] }}
+        run: |
+          bash ci/sign-artifact.sh "$IMAGE" "dist/$ARTIFACT" "$PACKAGE" "$VERSION" \
+            "out/$ARTIFACT.$ALG.bundle.json" "dist/$ARTIFACT.cdx.json" "out/$ARTIFACT.cdx.json.$ALG.bundle.json"
+      - name: Profil kunci di bundle = matrix
+        run: |
+          got="$(jq -r .manifest_b64 "out/$ARTIFACT.$ALG.bundle.json" | base64 -d | jq -r .algorithm)"
+          echo "algorithm di manifest: $got"
+          [ "$got" = "$ALG" ]
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.algorithm }}
+          path: out/
+          if-no-files-found: error
+
+  verify:
+    name: verify (${{ matrix.algorithm }})
+    needs: [prepare, sign]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        algorithm: [ed25519, ecdsa-p256-sha256, rsa-pss-sha256]
+    env:
+      IMAGE: ${{ needs.prepare.outputs.image }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      ARTIFACT: ${{ needs.prepare.outputs.artifact }}
+      ALG: ${{ matrix.algorithm }}
+    steps:
+      # Trust store dari checkout repo pada commit ini (sumber tepercaya), bukan dari artefak sign.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifact
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundle-${{ matrix.algorithm }}
+          path: bundle
+      - name: Pull image by digest
+        run: bash ci/resolve-image.sh "$IMAGE"
+      - name: (uji negatif) ubah 1 byte artefak
+        if: ${{ inputs.tamper }}
+        run: |
+          printf '\x00' | dd of="dist/$ARTIFACT" bs=1 seek=1 conv=notrunc status=none
+          sha256sum "dist/$ARTIFACT"
+      - name: Verify (-json, tanpa privkey)
+        run: |
+          bash ci/verify-artifact.sh "$IMAGE" "dist/$ARTIFACT" "bundle/$ARTIFACT.$ALG.bundle.json" \
+            "$TRUST_STORE" "$PACKAGE" "$VERSION" "result/verify-$ALG.json"
+      - name: Verify SBOM + keterikatan ke artefak (T37)
+        run: |
+          bash ci/verify-sbom.sh "$IMAGE" "dist/$ARTIFACT.cdx.json" "bundle/$ARTIFACT.cdx.json.$ALG.bundle.json" \
+            "$TRUST_STORE" "$PACKAGE" "$VERSION" "dist/$ARTIFACT" result "$ALG"
+      - name: Simpan hasil verify (bukti, juga saat gagal)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-${{ matrix.algorithm }}
+          path: result/
+          if-no-files-found: ignore
+
+  deploy:
+    name: deploy (berkas penanda)
+    needs: [prepare, verify]
+    runs-on: ubuntu-24.04
+    env:
+      IMAGE: ${{ needs.prepare.outputs.image }}
+      ARTIFACT: ${{ needs.prepare.outputs.artifact }}
+      SHA256: ${{ needs.prepare.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifact
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bundle-*
+          path: bundles
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: verify-*
+          path: verify
+          merge-multiple: true
+      - name: Deploy
+        run: bash ci/deploy-marker.sh "dist/$ARTIFACT" "$SHA256" bundles verify "$IMAGE" deploy "dist/$ARTIFACT.cdx.json"
+      - name: Ringkasan
+        run: |
+          {
+            echo "### Deploy: \`$ARTIFACT\`"
+            echo
+            echo '```'
+            cat deploy/DEPLOYED
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deployment
+          path: deploy/
+          if-no-files-found: error
+
+  audit:
+    name: audit privkey (artefak + log)
+    needs: [prepare, sign, verify, deploy]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Artefak run ini tidak memuat privkey
+        run: bash ci/audit-no-privkey.sh artifacts
+      - name: Log job yang sudah selesai tidak memuat privkey
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p logs
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" \
+            --jq '.jobs[] | select(.status == "completed") | .id' > job-ids.txt
+          while read -r id; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" > "logs/job-$id.txt"
+          done < job-ids.txt
+          echo "log diperiksa: $(wc -l < job-ids.txt) job"
+          bash ci/audit-no-privkey.sh logs
+
+  release:
+    name: draft GitHub Release
+    needs: [prepare, deploy, audit]
+    if: ${{ inputs.release_tag != '' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.release_tag }}
+      IMAGE: ${{ needs.prepare.outputs.image }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: deployment
+          path: deploy
+      - name: Buat draft release (PDF laporan dilampirkan manual, lalu publish)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "image=${IMAGE%@*}"
+            echo "digest=${IMAGE##*@}"
+            echo "pull=docker pull $IMAGE"
+          } > deploy/image-digest.txt
+          cp "$TRUST_STORE" deploy/trust-store.json
+          bash ci/release-notes.sh "$TAG" "$VERSION" "$IMAGE" deploy > release-notes.md
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "sister-sign $VERSION" --notes-file release-notes.md deploy/*

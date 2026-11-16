@@ -1,4 +1,5 @@
 build/
+build-*/
 cmake-build-*/
 .cache/
 compile_commands.json
@@ -10,4 +11,9 @@ tests/results/*
 !tests/results/results.md
 *.key.pem
 !tests/fixtures/**/*.key.pem
-!ci/**/*.key.pem
+# Privkey demo pipeline (ci/) hanya ada di GitHub secret, tidak di repo (T26).
+# Laporan LaTeX: keluaran build
+# Benchmark: hasil run lokal ad hoc (hasil resmi di bench/results/ di-commit)
+bench/out/
+
+laporan/
