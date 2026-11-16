@@ -30,6 +30,7 @@ COPY include/ include/
 COPY src/ src/
 COPY tests/ tests/
 COPY bench/ bench/
+COPY docs/api/examples/ docs/api/examples/
 
 # OpenSSL >= 3.5 diwajibkan oleh find_package di CMakeLists.txt.
 # -Werror OFF di sini: gerbang warning ada di CI; warning optimizer (Release) tidak boleh

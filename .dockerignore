@@ -6,6 +6,7 @@
 !src/
 !tests/
 !bench/
+!docs/api/examples/
 
 # Dikecualikan lagi walau berada di dalam direktori yang di-allow.
 tests/fixtures/
