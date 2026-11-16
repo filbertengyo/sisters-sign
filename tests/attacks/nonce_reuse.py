@@ -5,6 +5,8 @@ from ecdsa.numbertheory import inverse_mod
 from ecdsa.util import sigdecode_string
 
 if __name__ == "__main__":
+    print("testing nonce reuse case")
+
     n = SECP256k1.order
 
     print(f"on curve: SECP256k1")
@@ -44,6 +46,47 @@ if __name__ == "__main__":
 
     # Recover private key
     recovered_private_key = ((s2 * h1 - s1 * h2) * inverse_mod(r1 * (s1 - s2), n)) % n
+
+    print(f"with derivable private key: {recovered_private_key}")
+
+    assert(original_private_key == recovered_private_key)
+
+
+    print("testing known nonce case")
+
+    n = SECP256k1.order
+
+    print(f"on curve: SECP256k1")
+
+    k = 1337 # The example known nonce
+
+    print(f"with nonce: {k}")
+
+    # Generate the key pair
+    d_A = SigningKey.generate(curve=SECP256k1)
+    original_private_key = d_A.privkey.secret_multiplier
+    Q_A = d_A.verifying_key
+
+    print(f"with private key: {original_private_key}")
+
+    # Define message
+    m = b"message"
+
+    print(f"using message: {m}")
+
+    # Sign message digest with known nonce
+    signature = d_A.sign(m, hashfunc=sha256, k=k)
+
+    print(f"gives signature: {signature.hex()}")
+
+    # Get signature components
+    r, s = sigdecode_string(signature, n)
+
+    # Calculate message digest
+    h = int(sha256(m).hexdigest(), base=16)
+
+    # Recover private key
+    recovered_private_key = ((s * k - h) * inverse_mod(r, n)) % n
 
     print(f"with derivable private key: {recovered_private_key}")
 
