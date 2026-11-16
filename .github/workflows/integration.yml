@@ -1,0 +1,116 @@
+name: integration
+
+# Uji integrasi CI/CD C01-C05 (T27, spek Bagian 2.9 / Tabel 2.15) terhadap image rilis BY DIGEST
+# dari registry. Program tidak di-build dari source: semua perintah jalan di container image itu.
+#
+#   C01  sign + verify + deploy (berkas penanda) x3 algoritma
+#   C02  1 byte artefak diubah setelah sign       -> ditolak, deploy tidak jalan
+#   C03  trust store kosong / package tidak diizinkan -> ditolak, deploy tidak jalan
+#   C04  path artefak tidak ada                   -> INPUT_ERROR, deploy tidak jalan
+#   C05  UID/GID runner, tanpa TTY, --network none
+#
+# Workflow ini HIJAU bila semua penolakan terbukti terjadi (exit code asli dibaca per skenario).
+# Bukti: artefak `integration-results` (results.md, per skenario result.txt, commands.txt,
+# verify.json + .exit, ada/tidaknya deploy/DEPLOYED) dan `integration-logs` (log job yang sudah
+# diaudit tanpa privkey). Lihat tests/integration/README.md.
+#
+# Secret: DEMO_KEY_ED25519, DEMO_KEY_ECDSA_P256, DEMO_KEY_RSA_PSS (sama dengan release-pipeline).
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: 'Image by digest (<repo>@sha256:...). Kosong = isi ci/image-ref.txt'
+        required: false
+        default: ''
+  workflow_call:
+    inputs:
+      image:
+        description: 'Image by digest (<repo>@sha256:...)'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  scenarios:
+    name: C01-C05
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Tentukan image
+        id: image
+        env:
+          INPUT_IMAGE: ${{ inputs.image }}
+        run: |
+          ref="$INPUT_IMAGE"
+          if [ -z "$ref" ]; then
+            ref="$(grep -v -e '^#' -e '^[[:space:]]*$' ci/image-ref.txt | head -n1)"
+          fi
+          echo "image=$ref" >> "$GITHUB_OUTPUT"
+          echo "image: $ref"
+      - name: C01-C05
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          DEMO_KEY_ED25519: ${{ secrets.DEMO_KEY_ED25519 }}
+          DEMO_KEY_ECDSA_P256: ${{ secrets.DEMO_KEY_ECDSA_P256 }}
+          DEMO_KEY_RSA_PSS: ${{ secrets.DEMO_KEY_RSA_PSS }}
+        run: bash tests/integration/run.sh "$IMAGE" integration-out
+      - name: Ringkasan
+        if: ${{ always() }}
+        run: |
+          if [ -f integration-out/results.md ]; then
+            cat integration-out/results.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "results.md tidak terbentuk (lihat log langkah C01-C05)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: integration-results
+          path: integration-out/
+          if-no-files-found: ignore
+
+  audit:
+    name: audit privkey (artefak + log)
+    needs: scenarios
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: integration-results
+          path: artifacts
+      - name: Artefak run ini tidak memuat privkey
+        run: bash ci/audit-no-privkey.sh artifacts
+      - name: Log job yang sudah selesai tidak memuat privkey
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p logs
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" \
+            --jq '.jobs[] | select(.status == "completed") | .id' > job-ids.txt
+          while read -r id; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" > "logs/job-$id.txt"
+          done < job-ids.txt
+          echo "log diperiksa: $(wc -l < job-ids.txt) job"
+          bash ci/audit-no-privkey.sh logs
+      # Salinan log hanya diunggah SETELAH lolos audit (spek: log yang dibersihkan dari rahasia).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: integration-logs
+          path: logs/
+          if-no-files-found: error
