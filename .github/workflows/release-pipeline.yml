@@ -262,14 +262,17 @@ jobs:
         run: |
           mkdir -p logs
           gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" \
-            --jq '.jobs[] | select(.status == "completed") | .id' > job-ids.txt
+            --jq '.jobs[] | select(.status == "completed") | [.id, .conclusion, (.steps | length), .name] | @tsv' > jobs.tsv
+          awk -F'\t' '$2 != "skipped" && $3 > 0' jobs.tsv > logs/jobs-audited.tsv
+          awk -F'\t' '$2 == "skipped" || $3 == 0' jobs.tsv > logs/jobs-without-log.tsv
+          cut -f1 logs/jobs-audited.tsv > job-ids.txt
           while read -r id; do
             # Log job memuat kode warna ANSI: gh menolak menulisnya tanpa --allow-escape-sequences.
             # Kode itu dibuang supaya grep privkey tidak terpotong warna dan salinan log berupa teks polos.
             gh api --allow-escape-sequences "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" |
               sed 's/\x1b\[[0-9;?]*[ -\/]*[@-~]//g' > "logs/job-$id.txt"
           done < job-ids.txt
-          echo "log diperiksa: $(wc -l < job-ids.txt) job"
+          echo "log diperiksa: $(wc -l < job-ids.txt) job; tanpa log (skipped): $(wc -l < logs/jobs-without-log.tsv) job"
           bash ci/audit-no-privkey.sh logs
 
   release:
