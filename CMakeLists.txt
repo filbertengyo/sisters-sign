@@ -19,6 +19,9 @@ if(SISTER_SIGN_SANITIZE)
   target_link_options(project_options INTERFACE -fsanitize=address,undefined)
 endif()
 
+# Python3
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 # OpenSSL >= 3.5: sama dengan image (Debian trixie) dan CI.
 # <3.5 streaming Ed25519 crash dan default salt RSA-PSS berbeda.
 find_package(OpenSSL 3.5 REQUIRED)
@@ -71,8 +74,12 @@ add_executable(unit_tests
   tests/unit/cli_trust_test.cpp
   tests/unit/cli_sign_test.cpp
   tests/unit/verify_test.cpp
-  tests/unit/cli_verify_test.cpp)
+  tests/unit/cli_verify_test.cpp
+  tests/unit/bench_stats_test.cpp
+  tests/unit/cli_sbom_test.cpp)
 target_link_libraries(unit_tests PRIVATE core doctest::doctest project_options)
+# bench/stats.hpp (T29) diuji di unit_tests.
+target_include_directories(unit_tests PRIVATE ${CMAKE_SOURCE_DIR}/bench)
 target_compile_definitions(unit_tests PRIVATE SISTER_SIGN_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
 add_test(NAME unit_tests COMMAND unit_tests)
 
@@ -92,7 +99,11 @@ add_test(NAME e2e_cases
 add_test(NAME e2e_harness_selftest
   COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/selftest.sh $<TARGET_FILE:sister-sign>
           ${CMAKE_BINARY_DIR}/e2e-selftest)
-set_tests_properties(e2e_cases e2e_harness_selftest PROPERTIES TIMEOUT 300)
+# Bonus T37: kasus e2e subperintah sbom (terpisah dari U01-U14).
+add_test(NAME e2e_sbom
+  COMMAND bash ${CMAKE_SOURCE_DIR}/tests/e2e/run.sh $<TARGET_FILE:sister-sign>
+          ${CMAKE_SOURCE_DIR}/tests/e2e/sbom-cases ${CMAKE_BINARY_DIR}/e2e-sbom-results)
+set_tests_properties(e2e_cases e2e_harness_selftest e2e_sbom PROPERTIES TIMEOUT 300)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/e2e-selftest)
 
 # Satu perintah untuk laporan: jalankan semua kasus dan tulis bukti + tabel ke tests/results/.
@@ -102,10 +113,36 @@ add_custom_target(e2e_report
   DEPENDS sister-sign forge
   USES_TERMINAL)
 
+# Spike A
+add_executable(spike_a tests/spikes/glaze_spike.cpp)
+target_link_libraries(spike_a PRIVATE doctest::doctest glaze::glaze project_options)
+add_test(NAME spike_a COMMAND spike_a)
+
 # Spike C (T04): Ed25519 one-shot + parameter RSA-PSS; lihat docs/spike-c.md
 add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
 target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
 add_test(NAME spike_c COMMAND spike_c)
 
+# Nonce Reuse Attack Demo
+add_test(NAME nonce_reuse COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/attacks/nonce_reuse.py)
+
+# Canonicalization Confusion Attack Demo
+add_executable(canonicalization_demo tests/attacks/canonicalization_demo.cpp)
+target_link_libraries(canonicalization_demo PRIVATE core doctest::doctest glaze::glaze project_options)
+add_test(NAME canonicalization_demo COMMAND canonicalization_demo)
+
+# Rollback Attack Demo
+add_executable(rollback_demo tests/attacks/rollback_demo.cpp)
+target_link_libraries(rollback_demo PRIVATE project_options)
+add_test(NAME rollback_demo COMMAND rollback_demo)
+
+# Interop (T28): 3 algoritma x 2 arah terhadap Python cryptography + openssl CLI; lihat docs/interop.md
+add_test(NAME interop_test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests
+  COMMAND ${Python3_EXECUTABLE} -m interop.main $<TARGET_FILE:sister-sign>
+          ${CMAKE_BINARY_DIR}/interop-results)
+set_tests_properties(interop_test PROPERTIES TIMEOUT 300)
+
+# Benchmark (T29): build Release untuk angka yang bermakna; lihat bench/README.md.
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)
