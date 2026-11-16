@@ -19,6 +19,9 @@ if(SISTER_SIGN_SANITIZE)
   target_link_options(project_options INTERFACE -fsanitize=address,undefined)
 endif()
 
+# Python3
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 # OpenSSL >= 3.5: sama dengan image (Debian trixie) dan CI.
 # <3.5 streaming Ed25519 crash dan default salt RSA-PSS berbeda.
 find_package(OpenSSL 3.5 REQUIRED)
@@ -119,6 +122,9 @@ add_test(NAME spike_a COMMAND spike_a)
 add_executable(spike_c tests/spikes/ed_rsa_spike.cpp)
 target_link_libraries(spike_c PRIVATE OpenSSL::Crypto doctest::doctest project_options)
 add_test(NAME spike_c COMMAND spike_c)
+
+# Nonce Reuse Attack Demo
+add_test(NAME nonce_reuse COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/attacks/nonce_reuse.py)
 
 # Canonicalization Confusion Attack Demo
 add_executable(canonicalization_demo tests/attacks/canonicalization_demo.cpp)
