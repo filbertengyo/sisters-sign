@@ -6,6 +6,8 @@ name: build-image
 #   pull_request      -> build + cek image saja (tanpa login, tanpa push) bila build berubah.
 #   workflow_dispatch -> sama dengan PR; push hanya bila dijalankan pada ref tag v*.
 # Cek image ada di ci/check-image.sh (bisa dijalankan lokal).
+# Setelah push + pull anonim lulus, tag v* juga menjalankan release-pipeline.yml (T26) terhadap
+# digest yang baru, lalu membuat draft GitHub Release (T36).
 
 on:
   push:
@@ -15,7 +17,8 @@ on:
       - Dockerfile
       - .dockerignore
       - .github/workflows/build-image.yml
-      - ci/check-image.sh
+      - .github/workflows/release-pipeline.yml
+      - 'ci/**'
       - CMakeLists.txt
       - 'include/**'
       - 'src/**'
@@ -33,10 +36,18 @@ jobs:
     name: build + check image (no push)
     if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-24.04
+    # Registry lokal: supaya uji pipeline (T26) bisa merujuk image BY DIGEST tanpa push ke GHCR.
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: shellcheck ci/*.sh
+        run: shellcheck -x -s bash ci/*.sh
       - uses: docker/setup-buildx-action@v3
       - name: Build
         uses: docker/build-push-action@v6
@@ -51,6 +62,8 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Check image
         run: bash ci/check-image.sh sister-sign:ci
+      - name: Uji pipeline (sah -> deploy; artefak diubah -> verify gagal, tanpa deploy)
+        run: bash ci/test-pipeline.sh sister-sign:ci localhost:5000
 
   publish:
     name: build + push to GHCR (linux/amd64)
@@ -156,3 +169,17 @@ jobs:
           grep -qF "@${DIGEST}" repo-digests.txt
       - name: Jalan tanpa jaringan
         run: docker run --rm --network none "$REF" -version
+
+  # T26: pipeline pemakai (sign -> verify -> deploy) dengan image yang baru di-push, by digest.
+  # Bila semuanya lulus, draft GitHub Release dibuat dari artefak yang sudah diverifikasi (T36).
+  release-pipeline:
+    name: release pipeline
+    needs: [publish, verify-public]
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/release-pipeline.yml
+    with:
+      image: ${{ needs.publish.outputs.image }}@${{ needs.publish.outputs.digest }}
+      release_tag: ${{ github.ref_name }}
+    secrets: inherit
