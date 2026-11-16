@@ -15,5 +15,5 @@ tests/results/*
 # Laporan LaTeX: keluaran build
 # Benchmark: hasil run lokal ad hoc (hasil resmi di bench/results/ di-commit)
 bench/out/
-
+__pycache__/
 laporan/

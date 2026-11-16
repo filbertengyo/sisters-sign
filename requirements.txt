@@ -1,2 +1,5 @@
+cffi==2.1.1
+cryptography==50.0.2
 ecdsa==0.19.2
+pycparser==3.12
 six==1.17.0

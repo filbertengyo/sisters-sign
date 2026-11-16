@@ -136,6 +136,13 @@ add_executable(rollback_demo tests/attacks/rollback_demo.cpp)
 target_link_libraries(rollback_demo PRIVATE project_options)
 add_test(NAME rollback_demo COMMAND rollback_demo)
 
+# Interop (T28): 3 algoritma x 2 arah terhadap Python cryptography + openssl CLI; lihat docs/interop.md
+add_test(NAME interop_test
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests
+  COMMAND ${Python3_EXECUTABLE} -m interop.main $<TARGET_FILE:sister-sign>
+          ${CMAKE_BINARY_DIR}/interop-results)
+set_tests_properties(interop_test PROPERTIES TIMEOUT 300)
+
 # Benchmark (T29): build Release untuk angka yang bermakna; lihat bench/README.md.
 add_executable(bench bench/bench_main.cpp)
 target_link_libraries(bench PRIVATE core project_options)
